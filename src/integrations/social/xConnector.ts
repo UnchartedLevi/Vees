@@ -1,0 +1,1 @@
+import type{SocialConnector}from"./types";const pending=async()=>{throw new Error("X OAuth setup required.")};export const xConnector:SocialConnector={platform:"X",connect:pending,disconnect:pending,syncAccount:pending,syncPosts:pending,syncAnalytics:pending};

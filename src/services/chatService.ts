@@ -1,0 +1,1 @@
+import{requireSupabase}from"../lib/supabaseClient";export async function addChatMessage(workspaceId:string,role:"user"|"assistant",content:string){const{error}=await requireSupabase().from("chat_messages").insert({workspace_id:workspaceId,role,content});if(error)throw error}

@@ -1,0 +1,1 @@
+import type{SocialConnector}from"./types";const pending=async()=>{throw new Error("YouTube OAuth setup required.")};export const youtubeConnector:SocialConnector={platform:"YouTube Shorts",connect:pending,disconnect:pending,syncAccount:pending,syncPosts:pending,syncAnalytics:pending};

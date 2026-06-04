@@ -1,0 +1,1 @@
+import type{SocialConnector}from"./types";const pending=async()=>{throw new Error("LinkedIn OAuth setup required.")};export const linkedinConnector:SocialConnector={platform:"LinkedIn",connect:pending,disconnect:pending,syncAccount:pending,syncPosts:pending,syncAnalytics:pending};
