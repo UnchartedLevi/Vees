@@ -4,12 +4,24 @@
 
 @layer base {
   * {
-    @apply border-slate-200;
+    border-color: rgba(0, 0, 0, 0.08);
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
-    @apply bg-[#f7f8fa] text-slate-900 antialiased;
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background-color: #F5F5F7;
+    color: #1D1D1F;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+      Inter, ui-sans-serif, system-ui, sans-serif;
+    font-size: 17px;
+    line-height: 1.47059;
+    letter-spacing: -0.022em;
   }
 
   button,
@@ -17,43 +29,200 @@
   select,
   textarea {
     @apply outline-none;
+    font-family: inherit;
+  }
+
+  ::selection {
+    background-color: rgba(0, 113, 227, 0.2);
   }
 }
 
 @layer components {
+  /* ─── Cards ─────────────────────────────────────────────────── */
   .card {
-    @apply rounded-3xl border border-white/90 bg-white shadow-card transition-shadow duration-300;
+    background-color: #fff;
+    border-radius: 18px;
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.02), 0 2px 8px rgba(0,0,0,0.04);
+    transition: box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
 
-  .card-hover {
-    @apply transition duration-300 hover:-translate-y-0.5 hover:shadow-lg;
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
   }
 
+  /* ─── Inputs ─────────────────────────────────────────────────── */
   .input {
-    @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm shadow-slate-100/60 transition placeholder:text-slate-300 focus:border-slate-400 focus:ring-4 focus:ring-slate-100;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.14);
+    background-color: #fff;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.9375rem;
+    color: #1D1D1F;
+    transition: border-color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                box-shadow 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    -webkit-appearance: none;
   }
 
+  .input::placeholder {
+    color: #86868B;
+  }
+
+  .input:focus {
+    border-color: #0071E3;
+    box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.12);
+    outline: none;
+  }
+
+  /* ─── Labels ─────────────────────────────────────────────────── */
   .label {
-    @apply mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500;
+    display: block;
+    margin-bottom: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #6E6E73;
   }
 
   .helper {
-    @apply mt-1.5 block text-xs leading-5 text-slate-400;
+    display: block;
+    margin-top: 0.375rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: #86868B;
   }
 
+  /* ─── Buttons ─────────────────────────────────────────────────── */
   .button-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-700 hover:shadow-md;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 980px;
+    background-color: #0071E3;
+    padding: 0.5625rem 1.125rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: #fff;
+    letter-spacing: -0.01em;
+    transition: background-color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 100ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    white-space: nowrap;
+    cursor: pointer;
+    border: none;
+  }
+
+  .button-primary:hover {
+    background-color: #0077ED;
+  }
+
+  .button-primary:active {
+    transform: scale(0.98);
+    background-color: #006EDB;
+  }
+
+  .button-primary:disabled {
+    background-color: #86868B;
+    cursor: not-allowed;
+    transform: none;
   }
 
   .button-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-slate-50;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 980px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 0.5625rem 1.125rem;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: #1D1D1F;
+    letter-spacing: -0.01em;
+    transition: background-color 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                transform 100ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    white-space: nowrap;
+    cursor: pointer;
   }
 
+  .button-secondary:hover {
+    background-color: #F5F5F7;
+  }
+
+  .button-secondary:active {
+    transform: scale(0.98);
+  }
+
+  /* ─── Typography ─────────────────────────────────────────────── */
   .section-title {
-    @apply text-base font-semibold tracking-tight text-slate-900;
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    color: #1D1D1F;
   }
 
   .section-copy {
-    @apply mt-1 text-xs leading-5 text-slate-400;
+    margin-top: 0.25rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: #86868B;
+  }
+
+  /* ─── SpotlightCard (reactbits) ─────────────────────────────── */
+  .spotlight-card {
+    position: relative;
+    overflow: hidden;
+    --mouse-x: 50%;
+    --mouse-y: 50%;
+    --spotlight-color: rgba(0, 113, 227, 0.08);
+  }
+
+  .spotlight-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      200px circle at var(--mouse-x) var(--mouse-y),
+      var(--spotlight-color),
+      transparent 70%
+    );
+    opacity: 0;
+    transition: opacity 400ms ease;
+    pointer-events: none;
+    border-radius: inherit;
+    z-index: 0;
+  }
+
+  .spotlight-card:hover::before {
+    opacity: 1;
+  }
+
+  .spotlight-card > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ─── Scrollbars ─────────────────────────────────────────────── */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 99px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.25);
   }
 }

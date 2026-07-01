@@ -1,3 +1,40 @@
 import type { ReactNode } from "react";
-const colors: Record<string, string> = { High: "border-rose-100 bg-rose-50 text-rose-700", Active: "border-emerald-100 bg-emerald-50 text-emerald-700", Published: "border-emerald-100 bg-emerald-50 text-emerald-700", Scheduled: "border-sky-100 bg-sky-50 text-sky-700", Approved: "border-indigo-100 bg-indigo-50 text-indigo-700", Failed: "border-rose-100 bg-rose-50 text-rose-700", "In Review": "border-amber-100 bg-amber-50 text-amber-700", Medium: "border-amber-100 bg-amber-50 text-amber-700", Draft: "border-slate-200 bg-slate-100 text-slate-600", Ready: "border-violet-100 bg-violet-50 text-violet-700", Completed: "border-slate-200 bg-slate-100 text-slate-600", Weekly: "border-sky-100 bg-sky-50 text-sky-700", Monthly: "border-violet-100 bg-violet-50 text-violet-700", Campaign: "border-amber-100 bg-amber-50 text-amber-700" };
-export default function Badge({ children }: { children: ReactNode }) { const label = String(children); return <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] ${colors[label] ?? "border-slate-200 bg-slate-100 text-slate-600"}`}>{children}</span>; }
+
+const colors: Record<string, { bg: string; color: string }> = {
+  High:       { bg: "rgba(255,59,48,0.08)",   color: "#C00" },
+  Active:     { bg: "rgba(52,199,89,0.1)",    color: "#1A7A40" },
+  Published:  { bg: "rgba(52,199,89,0.1)",    color: "#1A7A40" },
+  Scheduled:  { bg: "rgba(0,113,227,0.08)",   color: "#0055B3" },
+  Approved:   { bg: "rgba(88,86,214,0.08)",   color: "#4840C9" },
+  Failed:     { bg: "rgba(255,59,48,0.08)",   color: "#C00" },
+  "In Review":{ bg: "rgba(255,149,0,0.1)",    color: "#A05A00" },
+  Medium:     { bg: "rgba(255,149,0,0.1)",    color: "#A05A00" },
+  Draft:      { bg: "rgba(0,0,0,0.05)",       color: "#6E6E73" },
+  Ready:      { bg: "rgba(88,86,214,0.08)",   color: "#4840C9" },
+  Completed:  { bg: "rgba(0,0,0,0.05)",       color: "#6E6E73" },
+  Weekly:     { bg: "rgba(0,113,227,0.08)",   color: "#0055B3" },
+  Monthly:    { bg: "rgba(88,86,214,0.08)",   color: "#4840C9" },
+  Campaign:   { bg: "rgba(255,149,0,0.1)",    color: "#A05A00" },
+  Low:        { bg: "rgba(0,0,0,0.05)",       color: "#6E6E73" },
+  Paused:     { bg: "rgba(0,0,0,0.05)",       color: "#6E6E73" },
+  Planning:   { bg: "rgba(0,113,227,0.08)",   color: "#0055B3" },
+  Idea:       { bg: "rgba(0,0,0,0.05)",       color: "#6E6E73" },
+};
+
+export default function Badge({ children }: { children: ReactNode }) {
+  const label = String(children);
+  const style = colors[label] ?? { bg: "rgba(0,0,0,0.05)", color: "#6E6E73" };
+
+  return (
+    <span
+      className="inline-flex items-center rounded-full px-2.5 py-[3px] text-[11px] font-semibold"
+      style={{
+        background: style.bg,
+        color: style.color,
+        letterSpacing: "0.02em",
+      }}
+    >
+      {children}
+    </span>
+  );
+}

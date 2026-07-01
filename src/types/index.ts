@@ -7,6 +7,8 @@ export type Priority = "High" | "Medium" | "Low";
 export type CampaignStatus = "Planning" | "Active" | "Completed" | "Paused";
 export type ReportType = "Weekly" | "Monthly" | "Campaign";
 
+export type PlanTier = "free" | "pro" | "agency";
+
 export interface Workspace {
   id: string;
   brandName: string;
@@ -15,6 +17,7 @@ export interface Workspace {
   mainPlatforms: SocialPlatform[];
   contentGoals: string[];
   toneOfVoice: string;
+  planTier?: PlanTier;
 }
 export interface SocialAccount { id: string; workspaceId: string; platform: SocialPlatform; accountName: string; accountHandle: string; connectionStatus: string; importMode: ImportMode; lastSyncedAt?: string; scopes?: string[]; }
 export interface AnalyticsSnapshot { id: string; workspaceId: string; socialAccountId: string; platform: SocialPlatform; snapshotDate: string; followers: number; totalPosts: number; totalReach: number; totalImpressions: number; totalEngagement: number; averageEngagementRate: number; }
@@ -34,6 +37,8 @@ export interface Post {
   campaignId?: string;
   contentGoal: string;
   postingTime?: string;
+  isShort?: boolean;
+  retentionRate?: number;
 }
 
 export interface ScheduledPost {

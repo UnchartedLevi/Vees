@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Vees — TikTok integration demo</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.47.0/iconfont/tabler-icons.min.css">
+<style>
+  html,body{margin:0;padding:0;background:#e9e9ec;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 0;}
+</style>
+</head>
+<body>
+
+<div style="max-width:640px;margin:0 auto;font-family:inherit;color:#1D1D1F;">
+
+  <div style="display:flex;gap:6px;margin-bottom:14px;" id="prog"></div>
+
+  <div style="background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:16px;overflow:hidden;">
+    <div style="display:flex;align-items:center;gap:8px;padding:11px 14px;background:#F5F5F7;border-bottom:0.5px solid rgba(0,0,0,0.08);">
+      <span style="display:flex;gap:6px;">
+        <span style="width:11px;height:11px;border-radius:50%;background:#FF5F57;"></span>
+        <span style="width:11px;height:11px;border-radius:50%;background:#FEBC2E;"></span>
+        <span style="width:11px;height:11px;border-radius:50%;background:#28C840;"></span>
+      </span>
+      <span id="urlbar" style="flex:1;background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:5px 12px;font-size:12px;color:#6E6E73;text-align:center;letter-spacing:-0.01em;">vees-lovat.vercel.app</span>
+    </div>
+
+    <div id="stage" style="position:relative;height:372px;background:#F5F5F7;">
+      <div id="screen" style="position:absolute;inset:0;padding:26px;transition:opacity .4s ease;opacity:1;"></div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:14px;">
+    <button id="playbtn" aria-label="Play or pause" style="display:inline-flex;align-items:center;gap:7px;background:#1D1D1F;color:#fff;border:none;border-radius:980px;padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;"><i class="ti ti-player-pause" aria-hidden="true"></i><span id="playlbl">Pause</span></button>
+    <button id="restart" aria-label="Restart" style="display:inline-flex;align-items:center;gap:7px;background:#fff;color:#1D1D1F;border:0.5px solid rgba(0,0,0,0.15);border-radius:980px;padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;"><i class="ti ti-refresh" aria-hidden="true"></i>Restart</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var C={ink:"#1D1D1F",sub:"#6E6E73",hint:"#86868B",line:"rgba(0,0,0,0.08)",card:"#fff",tk:"#FE2C55",tkc:"#25F4EE",ok:"#28C840"};
+  var cap=function(t,s){return '<p style="margin:0;font-size:19px;font-weight:600;letter-spacing:-0.02em;color:'+C.ink+'">'+t+'</p><p style="margin:5px 0 0;font-size:13px;color:'+C.sub+'">'+s+'</p>';};
+  var tklogo=function(sz){return '<span style="display:inline-flex;align-items:center;justify-content:center;width:'+sz+'px;height:'+sz+'px;border-radius:'+(sz*0.28)+'px;background:#000;color:#fff;font-weight:700;font-size:'+(sz*0.5)+'px;">t</span>';};
+
+  var steps=[
+    {url:"vees-lovat.vercel.app/app/dashboard",html:
+      cap("Connect your accounts","Vees starts empty until a social account is linked.")+
+      '<div style="margin-top:22px;background:'+C.card+';border:0.5px solid '+C.line+';border-radius:14px;padding:30px 24px;text-align:center;">'+
+        '<span style="display:inline-flex;width:48px;height:48px;align-items:center;justify-content:center;border-radius:14px;background:#F5F5F7;color:'+C.hint+';"><i class="ti ti-plug-connected-x" style="font-size:24px" aria-hidden="true"></i></span>'+
+        '<p style="margin:14px 0 0;font-size:15px;font-weight:500;color:'+C.ink+'">No analytics yet</p>'+
+        '<p style="margin:5px 0 16px;font-size:13px;color:'+C.sub+'">Connect a platform to start tracking posts and retention.</p>'+
+        '<span style="display:inline-block;background:'+C.ink+';color:#fff;border-radius:980px;padding:9px 20px;font-size:13px;font-weight:500;">Connect social account</span>'+
+      '</div>'},
+
+    {url:"vees-lovat.vercel.app/app/connect",html:
+      cap("Choose a platform","The manager picks TikTok from the connect sheet.")+
+      '<div style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+
+        row(tklogo(34),"TikTok","Login Kit · video.list",true)+
+        row('<span style="display:inline-flex;width:34px;height:34px;align-items:center;justify-content:center;border-radius:9px;background:#F5F5F7;color:'+C.hint+'"><i class="ti ti-brand-youtube" style="font-size:20px"></i></span>',"YouTube","Data API v3",false)+
+        row('<span style="display:inline-flex;width:34px;height:34px;align-items:center;justify-content:center;border-radius:9px;background:#F5F5F7;color:'+C.hint+'"><i class="ti ti-brand-instagram" style="font-size:20px"></i></span>',"Instagram","Graph API",false)+
+        row('<span style="display:inline-flex;width:34px;height:34px;align-items:center;justify-content:center;border-radius:9px;background:#F5F5F7;color:'+C.hint+'"><i class="ti ti-brand-x" style="font-size:20px"></i></span>',"X","v2 API",false)+
+      '</div>'},
+
+    {url:"tiktok.com/v2/auth/authorize",html:
+      '<div style="display:flex;align-items:center;gap:10px;">'+tklogo(30)+'<span style="font-size:14px;font-weight:600;color:'+C.ink+'">TikTok</span></div>'+
+      '<div style="margin-top:16px;">'+cap("Authorize Vees","TikTok asks the user to grant only the scopes Vees needs.")+'</div>'+
+      '<div style="margin-top:18px;background:'+C.card+';border:0.5px solid '+C.line+';border-radius:14px;padding:6px 16px;">'+
+        perm("ti-user-circle","Basic profile","user.info.basic")+
+        perm("ti-video","Your public videos","video.list")+
+      '</div>'+
+      '<div style="margin-top:16px;display:flex;gap:10px;">'+
+        '<span style="flex:1;text-align:center;background:'+C.tk+';color:#fff;border-radius:980px;padding:11px;font-size:14px;font-weight:600;">Authorize</span>'+
+        '<span style="text-align:center;color:'+C.sub+';border:0.5px solid '+C.line+';border-radius:980px;padding:11px 22px;font-size:14px;">Cancel</span>'+
+      '</div>'},
+
+    {url:"aerhxticuhmjisjnnqmk.supabase.co/functions/v1/social-oauth-callback",html:
+      '<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">'+
+        '<span style="position:relative;display:inline-flex;width:56px;height:56px;align-items:center;justify-content:center;border-radius:16px;background:#fff;border:0.5px solid '+C.line+';color:'+C.ink+'"><i class="ti ti-lock" style="font-size:26px" aria-hidden="true"></i></span>'+
+        '<p style="margin:18px 0 0;font-size:17px;font-weight:600;letter-spacing:-0.02em;color:'+C.ink+'">Securely exchanging tokens</p>'+
+        '<p style="margin:6px 0 0;font-size:13px;color:'+C.sub+';max-width:340px;">The code is exchanged and the access token is encrypted server-side in a Supabase Edge Function — never in the browser.</p>'+
+        '<div style="margin-top:16px;display:flex;flex-direction:column;gap:7px;font-size:12px;color:'+C.sub+';">'+
+          '<span><i class="ti ti-circle-check" style="color:'+C.ok+';font-size:14px;vertical-align:-2px;"></i> Code verified</span>'+
+          '<span><i class="ti ti-circle-check" style="color:'+C.ok+';font-size:14px;vertical-align:-2px;"></i> Token encrypted &amp; stored</span>'+
+        '</div>'+
+      '</div>'},
+
+    {url:"vees-lovat.vercel.app/app/connect",html:
+      cap("TikTok connected","The account is linked. One tap pulls in the videos.")+
+      '<div style="margin-top:20px;background:'+C.card+';border:0.5px solid '+C.line+';border-radius:14px;padding:18px;display:flex;align-items:center;gap:14px;">'+
+        tklogo(42)+
+        '<div style="flex:1;"><p style="margin:0;font-size:15px;font-weight:600;color:'+C.ink+'">@veeshq</p><p style="margin:3px 0 0;font-size:12px;color:'+C.sub+'"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+C.ok+';vertical-align:1px;margin-right:5px;"></span>Connected · scopes active</p></div>'+
+        '<span style="background:'+C.ink+';color:#fff;border-radius:980px;padding:9px 18px;font-size:13px;font-weight:500;">Sync TikTok</span>'+
+      '</div>'},
+
+    {url:"vees-lovat.vercel.app/app/connect",html:
+      cap("Importing videos","Vees maps each video into posts with its metrics.")+
+      '<div style="margin-top:18px;background:'+C.card+';border:0.5px solid '+C.line+';border-radius:14px;padding:18px;">'+
+        '<div style="display:flex;justify-content:space-between;font-size:13px;color:'+C.sub+';"><span>Syncing 24 videos…</span><span id="pct" style="font-weight:600;color:'+C.ink+'">100%</span></div>'+
+        '<div style="margin-top:10px;height:6px;border-radius:6px;background:#EDEDF0;overflow:hidden;"><div id="bar" style="height:100%;width:100%;background:'+C.ink+';border-radius:6px;transition:width .25s;"></div></div>'+
+        '<div style="margin-top:16px;display:flex;flex-direction:column;gap:9px;">'+
+          synced("Retention hooks — Ep. 4","views · likes · shares")+
+          synced("Behind the launch","views · comments · saves")+
+          synced("3 tips for creators","completion rate")+
+        '</div>'+
+      '</div>'},
+
+    {url:"vees-lovat.vercel.app/app/analytics",html:
+      cap("Insightful analytics","Presentable retention and engagement, ready for the client.")+
+      '<div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">'+
+        stat("Views","184.2K","+18%")+stat("Avg. retention","61%","+7pts")+stat("Engagement","9.4%","+2.1%")+
+      '</div>'+
+      '<div style="margin-top:12px;background:'+C.card+';border:0.5px solid '+C.line+';border-radius:14px;padding:16px 18px;">'+
+        '<p style="margin:0 0 12px;font-size:12px;color:'+C.sub+'">Viewer retention curve</p>'+
+        spark()+
+      '</div>'},
+  ];
+
+  function row(logo,name,meta,on){
+    return '<div style="background:'+C.card+';border:'+(on?'2px solid '+C.tk:'0.5px solid '+C.line)+';border-radius:13px;padding:14px;display:flex;flex-direction:column;gap:9px;">'+
+      logo+'<div><p style="margin:0;font-size:14px;font-weight:600;color:'+C.ink+'">'+name+(on?' <span style="color:'+C.tk+';font-size:12px;">• selected</span>':'')+'</p><p style="margin:2px 0 0;font-size:11px;color:'+C.hint+'">'+meta+'</p></div></div>';
+  }
+  function perm(ic,t,s){
+    return '<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:0.5px solid '+C.line+';">'+
+      '<i class="ti '+ic+'" style="font-size:20px;color:'+C.ink+'" aria-hidden="true"></i>'+
+      '<div style="flex:1;"><p style="margin:0;font-size:14px;color:'+C.ink+'">'+t+'</p><p style="margin:1px 0 0;font-size:11px;color:'+C.hint+';font-family:monospace">'+s+'</p></div>'+
+      '<i class="ti ti-check" style="color:'+C.ok+';font-size:16px;"></i></div>';
+  }
+  function synced(t,m){
+    return '<div style="display:flex;align-items:center;gap:11px;">'+
+      '<span style="display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;border-radius:8px;background:#F5F5F7;color:'+C.ink+'"><i class="ti ti-player-play" style="font-size:15px"></i></span>'+
+      '<div style="flex:1;min-width:0;"><p style="margin:0;font-size:13px;font-weight:500;color:'+C.ink+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+t+'</p><p style="margin:1px 0 0;font-size:11px;color:'+C.hint+'">'+m+'</p></div>'+
+      '<i class="ti ti-circle-check" style="color:'+C.ok+';font-size:17px;"></i></div>';
+  }
+  function stat(l,v,d){
+    return '<div style="background:'+C.card+';border:0.5px solid '+C.line+';border-radius:13px;padding:14px;">'+
+      '<p style="margin:0;font-size:11px;color:'+C.sub+'">'+l+'</p>'+
+      '<p style="margin:6px 0 0;font-size:22px;font-weight:600;letter-spacing:-0.03em;color:'+C.ink+'">'+v+'</p>'+
+      '<p style="margin:3px 0 0;font-size:11px;color:'+C.ok+';font-weight:500;">'+d+'</p></div>';
+  }
+  function spark(){
+    var pts="0,10 40,16 80,20 120,30 160,40 200,44 240,50 280,58 320,66 360,72";
+    return '<svg viewBox="0 0 360 84" style="width:100%;height:64px;" preserveAspectRatio="none">'+
+      '<polyline points="'+pts+'" fill="none" stroke="'+C.ink+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'+
+      '<polyline points="0,84 '+pts+' 360,84" fill="rgba(29,29,31,0.06)" stroke="none"/></svg>';
+  }
+
+  var prog=document.getElementById("prog");
+  steps.forEach(function(){var s=document.createElement("div");s.style.cssText="flex:1;height:3px;border-radius:3px;background:#D8D8DC;overflow:hidden;";var f=document.createElement("div");f.style.cssText="height:100%;width:0;background:#1D1D1F;transition:width .1s linear;";s.appendChild(f);prog.appendChild(s);});
+  var fills=[].map.call(prog.children,function(c){return c.firstChild;});
+
+  var screen=document.getElementById("screen"),urlbar=document.getElementById("urlbar");
+  var i=-1,playing=true,t0=0,raf,DUR=3400;
+
+  function render(n){
+    screen.style.opacity="0";
+    setTimeout(function(){screen.innerHTML=steps[n].html;urlbar.textContent=steps[n].url;screen.style.opacity="1";},380);
+  }
+  function tick(ts){
+    if(!playing)return;
+    if(!t0)t0=ts;
+    var e=ts-t0,p=Math.min(e/DUR,1);
+    if(i>=0)fills[i].style.width=(p*100)+"%";
+    if(p>=1){next();t0=ts;}
+    raf=requestAnimationFrame(tick);
+  }
+  function next(){
+    if(i>=0)fills[i].style.width="100%";
+    i=(i+1)%steps.length;
+    if(i===0)fills.forEach(function(f){f.style.width="0";});
+    render(i);
+  }
+  function start(){t0=0;cancelAnimationFrame(raf);raf=requestAnimationFrame(tick);}
+
+  var pb=document.getElementById("playbtn"),pl=document.getElementById("playlbl");
+  pb.onclick=function(){playing=!playing;pl.textContent=playing?"Pause":"Play";pb.querySelector("i").className=playing?"ti ti-player-pause":"ti ti-player-play";if(playing)start();};
+  document.getElementById("restart").onclick=function(){i=-1;fills.forEach(function(f){f.style.width="0";});playing=true;pl.textContent="Pause";pb.querySelector("i").className="ti ti-player-pause";next();start();};
+
+  next();start();
+})();
+</script>
+</body>
+</html>
