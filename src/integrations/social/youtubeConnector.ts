@@ -1,5 +1,6 @@
 import { requireSupabase } from "../../lib/supabaseClient";
 import type { ImportMode, SocialAccount } from "../../types";
+import { readableFunctionError } from "./functionErrors";
 import type { SocialConnector } from "./types";
 
 export const youtubeConnector: SocialConnector = {
@@ -8,7 +9,7 @@ export const youtubeConnector: SocialConnector = {
     const { data, error } = await requireSupabase().functions.invoke<{ authorizeUrl: string }>("start-youtube-oauth", {
       body: { workspaceId, importMode: input?.importMode ?? "from_today" },
     });
-    if (error) throw error;
+    if (error) throw new Error(await readableFunctionError(error, "YouTube connection could not start."));
     if (!data?.authorizeUrl) throw new Error("YouTube authorization URL was not returned.");
     window.location.assign(data.authorizeUrl);
     return new Promise<SocialAccount>(() => undefined);
@@ -24,7 +25,7 @@ export const youtubeConnector: SocialConnector = {
     const { error } = await requireSupabase().functions.invoke("sync-social-account", {
       body: { workspaceId: account.workspaceId, accountId: account.id },
     });
-    if (error) throw error;
+    if (error) throw new Error(await readableFunctionError(error, "YouTube sync failed."));
   },
   async syncAnalytics(account) {
     await this.syncPosts(account);

@@ -160,7 +160,8 @@ export default function ConnectSocial() {
   const [name, setName] = useState("Demo account");
   const [handle, setHandle] = useState("@demo");
   const [mode, setMode] = useState<ImportMode>("existing_posts");
-  const [busy, setBusy] = useState(false);
+  const [demoBusy, setDemoBusy] = useState(false);
+  const [connectingProvider, setConnectingProvider] = useState<SocialPlatform | "">("");
   const [syncingId, setSyncingId] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -185,7 +186,7 @@ export default function ConnectSocial() {
       setError("Add an account name and handle before connecting.");
       return;
     }
-    setBusy(true);
+    setDemoBusy(true);
     setMessage("");
     setError("");
     try {
@@ -200,7 +201,7 @@ export default function ConnectSocial() {
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Connection failed");
     } finally {
-      setBusy(false);
+      setDemoBusy(false);
     }
   };
 
@@ -212,14 +213,14 @@ export default function ConnectSocial() {
   const connectProvider = async (providerName: SocialPlatform) => {
     const connector = connectorFor(providerName);
     if (!connector) return;
-    setBusy(true);
+    setConnectingProvider(providerName);
     setMessage("");
     setError("");
     try {
       await connector.connect(workspace.id, { importMode: mode });
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : `${labelFor(providerName)} connection failed`);
-      setBusy(false);
+      setConnectingProvider("");
     }
   };
 
@@ -310,11 +311,11 @@ export default function ConnectSocial() {
                 {isLive ? (
                   <button
                     className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-                    disabled={busy}
+                    disabled={Boolean(connectingProvider)}
                     onClick={() => void connectProvider(provider.name)}
                   >
                     <Plug size={15} />
-                    {busy ? "Opening..." : `Connect ${provider.displayName}`}
+                    {connectingProvider === provider.name ? "Opening..." : `Connect ${provider.displayName}`}
                   </button>
                 ) : (
                   <div className="mt-5 flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-400">
@@ -380,11 +381,11 @@ export default function ConnectSocial() {
 
             <button
               className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
-              disabled={busy}
+              disabled={demoBusy}
               onClick={() => void connectDemo()}
             >
               <Plug size={15} />
-              {busy ? "Connecting..." : "Connect demo account"}
+              {demoBusy ? "Connecting..." : "Connect demo account"}
             </button>
           </div>
         </div>
