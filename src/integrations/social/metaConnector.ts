@@ -1,13 +1,16 @@
 import { requireSupabase } from "../../lib/supabaseClient";
 import type { ImportMode, SocialAccount } from "../../types";
+import { authHeaders } from "./authHeaders";
 import { readableFunctionError } from "./functionErrors";
 import type { SocialConnector } from "./types";
 
 export const metaConnector: SocialConnector = {
   platform: "Instagram",
   async connect(workspaceId: string, input?: { importMode?: ImportMode }) {
-    const { data, error } = await requireSupabase().functions.invoke<{ authorizeUrl: string }>("start-instagram-oauth", {
+    const db = requireSupabase();
+    const { data, error } = await db.functions.invoke<{ authorizeUrl: string }>("start-instagram-oauth", {
       body: { workspaceId, importMode: input?.importMode ?? "from_today" },
+      headers: await authHeaders(db),
     });
     if (error) throw new Error(await readableFunctionError(error, "Instagram connection could not start."));
     if (!data?.authorizeUrl) throw new Error("Instagram authorization URL was not returned.");
@@ -22,8 +25,10 @@ export const metaConnector: SocialConnector = {
     await this.syncPosts(account);
   },
   async syncPosts(account) {
-    const { error } = await requireSupabase().functions.invoke("sync-social-account", {
+    const db = requireSupabase();
+    const { error } = await db.functions.invoke("sync-social-account", {
       body: { workspaceId: account.workspaceId, accountId: account.id },
+      headers: await authHeaders(db),
     });
     if (error) throw new Error(await readableFunctionError(error, "Instagram sync failed."));
   },
