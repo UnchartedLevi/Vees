@@ -2,6 +2,7 @@ import type { PlanTier } from "../types";
 
 const FEATURES = {
   youtubeChannelAnalytics: ["pro", "agency"],
+  instagramInsights: ["pro", "agency"],
 } as const;
 
 export function hasFeature(planTier: PlanTier | string | undefined, feature: keyof typeof FEATURES) {

@@ -1,43 +1,152 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, Link2, Plug, RefreshCw, Zap } from "lucide-react";
+import { AlertCircle, CheckCircle2, CircleDashed, Clock3, Link2, Plug, RefreshCw, ShieldCheck, Sparkles, Zap } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useData } from "../context/DataContext";
 import { demoConnector } from "../integrations/social/demoConnector";
-import { tiktokConnector } from "../integrations/social/tiktokConnector";
+import { metaConnector } from "../integrations/social/metaConnector";
 import { youtubeConnector } from "../integrations/social/youtubeConnector";
 import type { ImportMode, SocialPlatform } from "../types";
 import PageHeader from "../components/PageHeader";
 
-const providers: { name: SocialPlatform; ready: boolean; note: string }[] = [
-  { name: "Instagram",      ready: false, note: "OAuth setup required. Meta app review and approved scopes needed before going live." },
-  { name: "TikTok",         ready: true,  note: "OAuth foundation is ready. Requires a TikTok developer app, approved scopes, and deployed Supabase functions." },
-  { name: "LinkedIn",       ready: false, note: "OAuth setup required. LinkedIn app review and approved API access needed." },
-  { name: "X",              ready: false, note: "OAuth 2.0 setup required. X developer portal approval and elevated access may apply." },
-  { name: "Facebook",       ready: false, note: "OAuth setup required. Meta app review and Page permissions needed." },
-  { name: "YouTube Shorts", ready: true,  note: "Channel analytics and Shorts tracking. Deeper retention metrics unlock on paid plans." },
+type ProviderStatus = "live" | "blocked" | "planned";
+
+type Provider = {
+  name: SocialPlatform;
+  displayName: string;
+  status: ProviderStatus;
+  note: string;
+  features: string[];
+};
+
+const providers: Provider[] = [
+  {
+    name: "Instagram",
+    displayName: "Instagram",
+    status: "live",
+    note: "Connect a professional Instagram account through Meta Business Login.",
+    features: ["Business or creator accounts", "Media sync", "Paid-plan insights"],
+  },
+  {
+    name: "YouTube Shorts",
+    displayName: "YouTube",
+    status: "live",
+    note: "Connect the full channel. Vees imports regular uploads and flags Shorts automatically.",
+    features: ["Channel videos", "Shorts detection", "Retention on paid plans"],
+  },
+  {
+    name: "TikTok",
+    displayName: "TikTok",
+    status: "blocked",
+    note: "Paused until TikTok approves the developer app and releases the Client Key.",
+    features: ["OAuth code ready", "Awaiting app approval", "No live connect button"],
+  },
+  {
+    name: "LinkedIn",
+    displayName: "LinkedIn",
+    status: "planned",
+    note: "Requires LinkedIn app review and approved API access before OAuth can go live.",
+    features: ["App review needed", "Read access pending", "Manual demo available"],
+  },
+  {
+    name: "X",
+    displayName: "X",
+    status: "planned",
+    note: "Requires X developer access and OAuth setup before Vees can connect accounts.",
+    features: ["Developer access needed", "OAuth pending", "Manual demo available"],
+  },
+  {
+    name: "Facebook",
+    displayName: "Facebook",
+    status: "planned",
+    note: "Requires Page permissions and Meta app review before account sync is available.",
+    features: ["Page permissions needed", "Review pending", "Manual demo available"],
+  },
 ];
 
 const importModes: [ImportMode, string, string][] = [
-  ["existing_posts", "Import existing posts",           "Pull available historical posts from the provider."],
-  ["from_today",     "Start tracking from today",       "Connect with minimal history."],
-  ["future_only",    "Only track future platform posts", "Keep analytics empty until content is added."],
+  ["existing_posts", "Import existing posts", "Pull available historical posts from the provider."],
+  ["from_today", "Start tracking from today", "Connect with minimal history."],
+  ["future_only", "Only track future platform posts", "Keep analytics empty until content is added."],
 ];
 
-const PlatformIcon = ({ name }: { name: SocialPlatform }) => {
-  const icons: Record<SocialPlatform, string> = {
-    Instagram:        "I",
-    TikTok:           "T",
-    LinkedIn:         "in",
-    X:                "X",
-    Facebook:         "f",
-    "YouTube Shorts": "▶",
-  };
+const labelFor = (name: SocialPlatform) => providers.find((provider) => provider.name === name)?.displayName ?? name;
+
+const statusConfig: Record<ProviderStatus, { label: string; className: string; icon: typeof CheckCircle2 }> = {
+  live: {
+    label: "Live",
+    className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    icon: CheckCircle2,
+  },
+  blocked: {
+    label: "Not ready",
+    className: "border-amber-200 bg-amber-50 text-amber-800",
+    icon: Clock3,
+  },
+  planned: {
+    label: "Coming later",
+    className: "border-slate-200 bg-slate-50 text-slate-500",
+    icon: CircleDashed,
+  },
+};
+
+const StatusBadge = ({ status }: { status: ProviderStatus }) => {
+  const config = statusConfig[status];
+  const Icon = config.icon;
   return (
-    <span
-      className="flex h-9 w-9 items-center justify-center rounded-[10px] text-[13px] font-bold"
-      style={{ background: "#F5F5F7", color: "#1D1D1F" }}
-    >
-      {icons[name]}
+    <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-semibold ${config.className}`}>
+      <Icon size={12} />
+      {config.label}
+    </span>
+  );
+};
+
+const InstagramMark = () => (
+  <svg aria-hidden="true" viewBox="0 0 48 48" className="h-7 w-7">
+    <defs>
+      <linearGradient id="instagram-gradient" x1="8" x2="40" y1="40" y2="8" gradientUnits="userSpaceOnUse">
+        <stop stopColor="#FEDA75" />
+        <stop offset="0.35" stopColor="#FA7E1E" />
+        <stop offset="0.65" stopColor="#D62976" />
+        <stop offset="1" stopColor="#4F5BD5" />
+      </linearGradient>
+    </defs>
+    <rect width="34" height="34" x="7" y="7" rx="10" fill="url(#instagram-gradient)" />
+    <circle cx="24" cy="24" r="8" fill="none" stroke="#fff" strokeWidth="3.5" />
+    <circle cx="33" cy="15" r="2.6" fill="#fff" />
+  </svg>
+);
+
+const YouTubeMark = () => (
+  <svg aria-hidden="true" viewBox="0 0 48 48" className="h-7 w-7">
+    <rect x="5" y="12" width="38" height="24" rx="7" fill="#FF0033" />
+    <path d="M21 18.5v11l10-5.5-10-5.5Z" fill="#fff" />
+  </svg>
+);
+
+const TikTokMark = () => (
+  <svg aria-hidden="true" viewBox="0 0 48 48" className="h-7 w-7">
+    <path d="M29.5 8c1 6.5 4.6 9.7 10.5 10.1v7.1c-3.9.1-7.3-1-10.2-3.1v11.2c0 7.2-5.1 11.7-11.8 11.7-6.1 0-10.5-4-10.5-9.8 0-6.5 5.2-10.3 12.4-9.7v7.3c-3.2-.7-5.3.4-5.3 2.5 0 1.8 1.4 3 3.5 3 2.6 0 4.1-1.5 4.1-4.7V8h7.3Z" fill="#111" />
+    <path d="M32.3 14.1c1.6 2.3 4.2 3.6 7.7 3.9v3.1c-3.8-.2-7.1-1.5-9.5-3.8v-3.2h1.8Z" fill="#25F4EE" opacity="0.9" />
+    <path d="M20 28.6v3.2c-3.5-.7-5.8.6-5.8 3 0 1 .4 1.9 1.1 2.5-3.2-.1-5.4-2-5.4-4.9 0-3.2 2.8-4.9 7.1-4.5 1 .1 2 .3 3 .7Z" fill="#FE2C55" opacity="0.85" />
+  </svg>
+);
+
+const FallbackMark = ({ name }: { name: SocialPlatform }) => (
+  <span className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-100 text-xs font-bold text-slate-600">
+    {labelFor(name).slice(0, 2)}
+  </span>
+);
+
+const PlatformIcon = ({ name }: { name: SocialPlatform }) => {
+  const icon =
+    name === "Instagram" ? <InstagramMark />
+    : name === "YouTube Shorts" ? <YouTubeMark />
+    : name === "TikTok" ? <TikTokMark />
+    : <FallbackMark name={name} />;
+
+  return (
+    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white shadow-sm">
+      {icon}
     </span>
   );
 };
@@ -58,8 +167,8 @@ export default function ConnectSocial() {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const providerLabels: Record<string, string> = { tiktok: "TikTok", youtube: "YouTube", social: "Provider" };
-    const providerKey = ["tiktok", "youtube", "social"].find((key) => params.has(key));
+    const providerLabels: Record<string, string> = { tiktok: "TikTok", youtube: "YouTube", instagram: "Instagram", social: "Provider" };
+    const providerKey = ["tiktok", "youtube", "instagram", "social"].find((key) => params.has(key));
     if (!providerKey) return;
     const status = params.get(providerKey);
     const label = providerLabels[providerKey];
@@ -95,7 +204,10 @@ export default function ConnectSocial() {
     }
   };
 
-  const connectorFor = (providerName: SocialPlatform) => (providerName === "TikTok" ? tiktokConnector : providerName === "YouTube Shorts" ? youtubeConnector : null);
+  const connectorFor = (providerName: SocialPlatform) =>
+    providerName === "YouTube Shorts" ? youtubeConnector
+    : providerName === "Instagram" ? metaConnector
+    : null;
 
   const connectProvider = async (providerName: SocialPlatform) => {
     const connector = connectorFor(providerName);
@@ -106,13 +218,13 @@ export default function ConnectSocial() {
     try {
       await connector.connect(workspace.id, { importMode: mode });
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : `${providerName} connection failed`);
+      setError(reason instanceof Error ? reason.message : `${labelFor(providerName)} connection failed`);
       setBusy(false);
     }
   };
 
   const syncProvider = async (accountId: string) => {
-    const account = socialAccounts.find((a) => a.id === accountId);
+    const account = socialAccounts.find((entry) => entry.id === accountId);
     if (!account) return;
     const connector = connectorFor(account.platform);
     if (!connector) return;
@@ -122,254 +234,211 @@ export default function ConnectSocial() {
     try {
       await connector.syncPosts(account);
       await refresh();
-      setMessage(`${account.platform} sync completed. Analytics and posts have been refreshed.`);
+      setMessage(`${labelFor(account.platform)} sync completed. Analytics and posts have been refreshed.`);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : `${account.platform} sync failed`);
+      setError(reason instanceof Error ? reason.message : `${labelFor(account.platform)} sync failed`);
     } finally {
       setSyncingId("");
     }
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-7">
       <PageHeader
         eyebrow="Channel connections"
         title="Connect social accounts"
-        description="Connect TikTok through OAuth, or use the demo connector while waiting for provider approvals."
+        description="Instagram and YouTube are ready for live OAuth. TikTok is paused until the developer app approval releases the Client Key."
       />
 
-      {/* Provider grid */}
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {providers.map(({ name: providerName, ready, note }) => (
-          <article
-            key={providerName}
-            className="card p-5 flex flex-col gap-4"
-            style={{ borderRadius: "18px" }}
-          >
-            <div className="flex items-start justify-between">
-              <PlatformIcon name={providerName} />
-              <span
-                className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
-                style={
-                  ready
-                    ? { background: "rgba(52,199,89,0.1)", color: "#1A7A40" }
-                    : { background: "rgba(0,0,0,0.05)", color: "#86868B" }
-                }
-              >
-                {ready ? "Ready" : "Coming soon"}
-              </span>
-            </div>
-
-            <div className="flex-1">
-              <h3
-                className="text-[15px] font-semibold"
-                style={{ color: "#1D1D1F", letterSpacing: "-0.02em" }}
-              >
-                {providerName}
-              </h3>
-              <p
-                className="mt-1 text-[12px] leading-relaxed"
-                style={{ color: "#86868B" }}
-              >
-                {note}
-              </p>
-            </div>
-
-            {ready ? (
-              <button
-                className="button-primary w-full"
-                disabled={busy}
-                onClick={() => void connectProvider(providerName)}
-                style={{ borderRadius: "12px" }}
-              >
-                <Plug size={14} />
-                {busy ? "Opening…" : `Connect ${providerName}`}
-              </button>
-            ) : (
-              <button
-                disabled
-                className="button-secondary w-full opacity-40 cursor-not-allowed"
-                style={{ borderRadius: "12px" }}
-              >
-                <Link2 size={14} />
-                Not available yet
-              </button>
-            )}
-          </article>
-        ))}
+      <section className="grid gap-3 md:grid-cols-3">
+        <div className="rounded-lg border border-emerald-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
+            <ShieldCheck size={16} />
+            Live connectors
+          </div>
+          <p className="mt-2 text-2xl font-semibold text-slate-950">2</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Instagram and YouTube can connect now.</p>
+        </div>
+        <div className="rounded-lg border border-amber-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-2 text-sm font-semibold text-amber-800">
+            <Clock3 size={16} />
+            Blocked
+          </div>
+          <p className="mt-2 text-2xl font-semibold text-slate-950">TikTok</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Waiting on app approval and Client Key.</p>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+            <Sparkles size={16} />
+            Import mode
+          </div>
+          <p className="mt-2 text-2xl font-semibold text-slate-950">{importModes.find(([value]) => value === mode)?.[1]}</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Used for the next live or demo connection.</p>
+        </div>
       </section>
 
-      {/* Demo connector */}
-      <section className="card p-6">
-        <div className="flex items-center gap-2.5 mb-5">
-          <span
-            className="flex h-8 w-8 items-center justify-center rounded-[10px]"
-            style={{ background: "#F5F5F7", color: "#1D1D1F" }}
-          >
-            <Zap size={15} />
+      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-base font-semibold text-slate-950">Live OAuth channels</h2>
+            <p className="mt-1 text-sm leading-6 text-slate-500">Connectors with verified backend functions show active buttons. Paused providers stay visible without a risky connect action.</p>
+          </div>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-3">
+          {providers.map((provider) => {
+            const isLive = provider.status === "live";
+            return (
+              <article key={provider.name} className="flex min-h-[260px] flex-col rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md">
+                <div className="flex items-start justify-between gap-3">
+                  <PlatformIcon name={provider.name} />
+                  <StatusBadge status={provider.status} />
+                </div>
+
+                <div className="mt-4 flex-1">
+                  <h3 className="text-[15px] font-semibold text-slate-950">{provider.displayName}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">{provider.note}</p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {provider.features.map((feature) => (
+                      <span key={feature} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-600">
+                        {feature}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {isLive ? (
+                  <button
+                    className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                    disabled={busy}
+                    onClick={() => void connectProvider(provider.name)}
+                  >
+                    <Plug size={15} />
+                    {busy ? "Opening..." : `Connect ${provider.displayName}`}
+                  </button>
+                ) : (
+                  <div className="mt-5 flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-400">
+                    <Link2 size={15} />
+                    {provider.status === "blocked" ? "Not ready yet" : "Planned"}
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-5 flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700">
+            <Zap size={17} />
           </span>
           <div>
-            <h3
-              className="text-[15px] font-semibold"
-              style={{ color: "#1D1D1F", letterSpacing: "-0.02em" }}
-            >
-              Demo / manual connector
-            </h3>
-            <p className="text-[12px]" style={{ color: "#86868B" }}>
-              Simulate a channel connection and seed realistic analytics instantly.
-            </p>
+            <h3 className="text-[15px] font-semibold text-slate-950">Demo / manual connector</h3>
+            <p className="text-sm leading-6 text-slate-500">Simulate any channel while provider reviews are still in progress.</p>
           </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Left — fields */}
           <div className="space-y-4">
             <label>
               <span className="label">Platform to simulate</span>
-              <select
-                className="input"
-                value={platform}
-                onChange={(e) => setPlatform(e.target.value as SocialPlatform)}
-              >
-                {providers.map(({ name: n }) => (
-                  <option key={n}>{n}</option>
+              <select className="input" value={platform} onChange={(event) => setPlatform(event.target.value as SocialPlatform)}>
+                {providers.map((provider) => (
+                  <option key={provider.name} value={provider.name}>{provider.displayName}</option>
                 ))}
               </select>
             </label>
             <label>
               <span className="label">Account name</span>
-              <input
-                className="input"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Vees Marketing"
-              />
+              <input className="input" value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Vees Marketing" />
             </label>
             <label>
               <span className="label">Handle</span>
-              <input
-                className="input"
-                value={handle}
-                onChange={(e) => setHandle(e.target.value)}
-                placeholder="@handle"
-              />
+              <input className="input" value={handle} onChange={(event) => setHandle(event.target.value)} placeholder="@handle" />
             </label>
           </div>
 
-          {/* Right — import mode */}
           <div>
             <p className="label mb-3">Import mode</p>
             <div className="space-y-2">
               {importModes.map(([value, title, copy]) => (
                 <label
                   key={value}
-                  className="flex cursor-pointer items-start gap-3 rounded-[14px] p-3.5 transition-colors duration-150"
-                  style={{
-                    background: mode === value ? "rgba(0,113,227,0.06)" : "#F5F5F7",
-                    border: `1px solid ${mode === value ? "rgba(0,113,227,0.2)" : "rgba(0,0,0,0.05)"}`,
-                  }}
+                  className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3.5 transition ${
+                    mode === value ? "border-slate-950 bg-slate-50" : "border-slate-200 bg-white hover:bg-slate-50"
+                  }`}
                 >
-                  <input
-                    type="radio"
-                    className="mt-0.5 accent-[#0071E3]"
-                    checked={mode === value}
-                    onChange={() => setMode(value)}
-                  />
+                  <input type="radio" className="mt-1 accent-slate-950" checked={mode === value} onChange={() => setMode(value)} />
                   <span>
-                    <span
-                      className="block text-[13px] font-semibold"
-                      style={{ color: "#1D1D1F" }}
-                    >
-                      {title}
-                    </span>
-                    <span
-                      className="mt-0.5 block text-[12px] leading-relaxed"
-                      style={{ color: "#86868B" }}
-                    >
-                      {copy}
-                    </span>
+                    <span className="block text-sm font-semibold text-slate-950">{title}</span>
+                    <span className="mt-1 block text-xs leading-5 text-slate-500">{copy}</span>
                   </span>
                 </label>
               ))}
             </div>
 
             <button
-              className="button-primary mt-4 w-full"
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
               disabled={busy}
               onClick={() => void connectDemo()}
-              style={{ borderRadius: "12px" }}
             >
-              <Plug size={14} />
-              {busy ? "Connecting…" : "Connect demo account"}
+              <Plug size={15} />
+              {busy ? "Connecting..." : "Connect demo account"}
             </button>
           </div>
         </div>
 
-        {/* Feedback */}
         {message && (
-          <p
-            className="mt-5 rounded-[12px] p-3.5 text-[13px] leading-relaxed"
-            style={{ background: "rgba(52,199,89,0.08)", color: "#1A7A40" }}
-          >
+          <p className="mt-5 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3.5 text-sm leading-6 text-emerald-800">
+            <CheckCircle2 className="mt-0.5 shrink-0" size={16} />
             {message}
           </p>
         )}
         {error && (
-          <p
-            className="mt-5 rounded-[12px] p-3.5 text-[13px] leading-relaxed"
-            style={{ background: "rgba(255,59,48,0.06)", color: "#C00" }}
-          >
+          <p className="mt-5 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3.5 text-sm leading-6 text-rose-700">
+            <AlertCircle className="mt-0.5 shrink-0" size={16} />
             {error}
           </p>
         )}
       </section>
 
-      {/* Connected accounts */}
       {socialAccounts.length > 0 && (
-        <section className="card p-6">
-          <h3
-            className="text-[15px] font-semibold mb-4"
-            style={{ color: "#1D1D1F", letterSpacing: "-0.02em" }}
-          >
-            Connected accounts
-          </h3>
+        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <h3 className="mb-4 text-[15px] font-semibold text-slate-950">Connected accounts</h3>
           <div className="space-y-2">
-            {socialAccounts.map((account) => (
-              <div
-                key={account.id}
-                className="flex flex-col gap-3 rounded-[14px] p-4 sm:flex-row sm:items-center sm:justify-between"
-                style={{ background: "#F5F5F7", border: "1px solid rgba(0,0,0,0.05)" }}
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <CheckCircle2 size={16} style={{ color: "#1A7A40", flexShrink: 0 }} />
-                  <div className="min-w-0">
-                    <p
-                      className="truncate text-[14px] font-medium"
-                      style={{ color: "#1D1D1F" }}
-                    >
-                      {account.platform} · {account.accountName}
-                    </p>
-                    <p className="truncate text-[12px]" style={{ color: "#86868B" }}>
-                      {account.accountHandle} · {account.importMode}
-                    </p>
+            {socialAccounts.map((account) => {
+              const canSync = Boolean(connectorFor(account.platform));
+              return (
+                <div key={account.id} className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <PlatformIcon name={account.platform} />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-950">
+                        {labelFor(account.platform)} - {account.accountName}
+                      </p>
+                      <p className="truncate text-xs leading-5 text-slate-500">
+                        {account.accountHandle} - {account.importMode}
+                      </p>
+                    </div>
                   </div>
+                  {canSync ? (
+                    <button
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-400 sm:w-auto"
+                      disabled={syncingId === account.id}
+                      onClick={() => void syncProvider(account.id)}
+                    >
+                      <RefreshCw size={14} className={syncingId === account.id ? "animate-spin" : ""} />
+                      {syncingId === account.id ? "Syncing..." : `Sync ${labelFor(account.platform)}`}
+                    </button>
+                  ) : (
+                    <span className="inline-flex w-full items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-400 sm:w-auto">
+                      Sync paused
+                    </span>
+                  )}
                 </div>
-                {(account.platform === "TikTok" || account.platform === "YouTube Shorts") && (
-                  <button
-                    className="button-secondary w-full sm:w-auto"
-                    disabled={syncingId === account.id}
-                    onClick={() => void syncProvider(account.id)}
-                    style={{ borderRadius: "10px", fontSize: "0.875rem" }}
-                  >
-                    <RefreshCw
-                      size={13}
-                      className={syncingId === account.id ? "animate-spin" : ""}
-                    />
-                    {syncingId === account.id ? "Syncing…" : `Sync ${account.platform}`}
-                  </button>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
