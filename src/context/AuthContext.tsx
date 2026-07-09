@@ -31,14 +31,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    const db = supabase;
     let active = true;
-    void supabase.auth.getSession().then(({ data, error: sessionError }) => {
+    void db.auth.getSession().then(async ({ data, error: sessionError }) => {
       if (!active) return;
+      if (!data.session || sessionError) {
+        setSession(null);
+        setError(sessionError?.message ?? "");
+        setLoading(false);
+        return;
+      }
+
+      const { error: userError } = await db.auth.getUser(data.session.access_token);
+      if (!active) return;
+      if (userError) {
+        await db.auth.signOut();
+        setSession(null);
+        setError("Your session expired. Sign in again to continue.");
+        setLoading(false);
+        return;
+      }
+
       setSession(data.session);
-      setError(sessionError?.message ?? "");
+      setError("");
       setLoading(false);
     });
-    const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data } = db.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setError("");
       setLoading(false);
