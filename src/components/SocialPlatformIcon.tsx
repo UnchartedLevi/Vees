@@ -5,6 +5,7 @@ const iconPath: Partial<Record<SocialPlatform, string>> = {
   Instagram: "/social-icons/instagram.png",
   TikTok: "/social-icons/tiktok.png",
   "YouTube Shorts": "/social-icons/youtube.png",
+  LinkedIn: "/social-icons/linkedin.png",
   X: "/social-icons/x.png",
   Facebook: "/social-icons/facebook.png",
 };
@@ -33,4 +34,3 @@ export default function SocialPlatformIcon({ platform, size = "md", className = 
     </span>
   );
 }
-
