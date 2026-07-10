@@ -1,4 +1,4 @@
-import { ArrowUpRight, CalendarCheck, CheckCircle2, Eye, Heart, Layers3, Lightbulb, Link2, Radio, Send, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowUpRight, CalendarCheck, CheckCircle2, Eye, Heart, Layers3, Lightbulb, Link2, PencilLine, Radio, Send, Sparkles, TrendingUp } from "lucide-react";
 import type { AppDataProps } from "../App";
 import type { SocialPlatform } from "../types";
 import { engagementTotal, formatNumber } from "../utils/analytics";
@@ -12,7 +12,7 @@ import PageHeader from "./PageHeader";
 import EmptyState from "./EmptyState";
 import SocialPlatformIcon from "./SocialPlatformIcon";
 
-export default function Dashboard({ posts, scheduledPosts, ideas, workspace, socialAccounts, onNavigate, onConnect }: AppDataProps) {
+export default function Dashboard({ posts, scheduledPosts, ideas, workspace, socialAccounts, onNavigate, onConnect, onCreatePost }: AppDataProps) {
   const topPosts = getTopPosts(posts);
   const recommendations = generateRecommendations(posts, scheduledPosts, ideas);
   const recentPosts = [...posts].sort((a, b) => a.datePosted.localeCompare(b.datePosted)).slice(-7);
@@ -84,6 +84,13 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
                   <p className="text-xs text-slate-500">scheduled</p>
                 </div>
               </div>
+              <button
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                onClick={() => onCreatePost?.(account.platform)}
+              >
+                <PencilLine size={15} />
+                Create new post
+              </button>
             </article>
           )) : (
             <article className="rounded-[16px] border border-slate-200 bg-white p-5 shadow-card lg:col-span-3">

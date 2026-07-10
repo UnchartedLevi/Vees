@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { CalendarPlus, ChevronLeft, ChevronRight, Clock3, Lightbulb } from "lucide-react";
 import type { AppDataProps } from "../App";
 import { contentTypes } from "../data/options";
@@ -29,13 +30,28 @@ const createBlank = (date = toDateKey(new Date()), platform: SocialPlatform = "Y
 });
 
 export default function Calendar({ scheduledPosts, setScheduledPosts, setIdeas, campaigns, socialAccounts }: AppDataProps) {
+  const location = useLocation();
+  const navigate = useNavigate();
   const firstConnected = socialAccounts.find((account) => account.connectionStatus === "connected")?.platform ?? "YouTube Shorts";
   const [visibleMonth, setVisibleMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [form, setForm] = useState(() => createBlank(toDateKey(new Date()), firstConnected));
   const [open, setOpen] = useState(false);
   const [platform, setPlatform] = useState<"All" | SocialPlatform>("All");
   const [status, setStatus] = useState<"All" | ScheduleStatus>("All");
-  const channelOrder = orderedPlatforms(socialAccounts);
+  const channelOrder = useMemo(() => orderedPlatforms(socialAccounts), [socialAccounts]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("new") !== "1") return;
+
+    const requested = params.get("platform") as SocialPlatform | null;
+    const selected = requested && channelOrder.includes(requested) ? requested : firstConnected;
+    const date = params.get("date") || toDateKey(new Date());
+    setForm(createBlank(date, selected));
+    setVisibleMonth(new Date(`${date}T12:00:00`));
+    setOpen(true);
+    navigate(location.pathname, { replace: true });
+  }, [channelOrder, firstConnected, location.pathname, location.search, navigate]);
 
   const days = useMemo(() => {
     const first = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);

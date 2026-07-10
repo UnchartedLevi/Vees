@@ -38,10 +38,12 @@ export interface AppDataProps {
   socialAccounts: SocialAccount[];
   onNavigate?: (page: Page) => void;
   onConnect?: () => void;
+  onCreatePost?: (platform?: string) => void;
 }
 
 const paths: Record<Page, string> = {
   Dashboard: "/app/dashboard",
+  Connect: "/app/connect",
   Calendar: "/app/calendar",
   Analytics: "/app/analytics",
   "Content Ideas": "/app/ideas",
@@ -160,7 +162,12 @@ function Shell() {
   const data = useData();
   const { signOut } = useAuth();
   const page = pageFromPath(location.pathname);
-  const props = { ...data, onNavigate: (next: Page) => navigate(paths[next]), onConnect: () => navigate("/app/connect") };
+  const props = {
+    ...data,
+    onNavigate: (next: Page) => navigate(paths[next]),
+    onConnect: () => navigate("/app/connect"),
+    onCreatePost: (platform?: string) => navigate(`/app/calendar?new=1${platform ? `&platform=${encodeURIComponent(platform)}` : ""}`),
+  };
 
   const content = () => {
     if (data.loading) return (
@@ -178,6 +185,7 @@ function Shell() {
     if (!page) return <Navigate to="/app/dashboard" replace />;
     return {
       Dashboard: <Dashboard {...props} />,
+      Connect: <ConnectSocial />,
       Calendar: <Calendar {...props} />,
       Analytics: <Analytics {...props} />,
       "Content Ideas": <Ideas {...props} />,

@@ -4,7 +4,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type Page = "Dashboard" | "Calendar" | "Analytics" | "Content Ideas" | "Campaigns" | "Reports" | "Assistant" | "Settings";
+export type Page = "Dashboard" | "Connect" | "Calendar" | "Analytics" | "Content Ideas" | "Campaigns" | "Reports" | "Assistant" | "Settings";
 
 interface Props {
   page: Page;
@@ -19,6 +19,7 @@ interface Props {
 
 const links: [Page, LucideIcon][] = [
   ["Dashboard", LayoutDashboard],
+  ["Connect", Plug],
   ["Calendar", CalendarDays],
   ["Analytics", BarChart3],
   ["Content Ideas", Lightbulb],
@@ -122,15 +123,6 @@ export default function Sidebar({ page, brandName, scheduledCount, onNavigate, o
               A focused week leaves room to learn from your audience.
             </p>
           </div>
-
-          <button
-            onClick={() => { onConnect(); onClose(); }}
-            className="button-secondary w-full"
-            style={{ borderRadius: "12px", fontSize: "0.875rem" }}
-          >
-            <Plug size={14} />
-            Connect account
-          </button>
 
           <button
             onClick={() => { onLogout(); onClose(); }}
