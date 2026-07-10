@@ -1,4 +1,5 @@
 import { corsHeaders, decryptToken, encryptToken, json, requireEnv, serviceClient, userClient } from "../_shared/tiktok.ts";
+import { decryptToken as decryptInstagramToken, encryptToken as encryptInstagramToken } from "../_shared/instagram.ts";
 import {
   decryptToken as decryptYouTubeToken,
   encryptToken as encryptYouTubeToken,
@@ -71,6 +72,24 @@ Deno.serve(async (request) => {
       const { error: updateError } = await db.from("social_accounts").update({
         access_token_encrypted: await encryptYouTubeToken(refreshPayload.access_token),
         token_expires_at: new Date(Date.now() + Number(refreshPayload.expires_in ?? 0) * 1000).toISOString(),
+        connection_status: "connected",
+        last_synced_at: new Date().toISOString(),
+      }).eq("id", accountId);
+      if (updateError) throw updateError;
+      return json({ refreshed: true });
+    }
+
+    if (account.platform === "Instagram") {
+      const accessToken = await decryptInstagramToken(account.access_token_encrypted);
+      if (!accessToken) return json({ error: "Instagram account is missing an access token" }, 400);
+
+      const refreshResponse = await fetch(`https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${accessToken}`);
+      const refreshPayload = await refreshResponse.json();
+      if (!refreshResponse.ok) throw new Error(refreshPayload.error?.message ?? "Instagram token refresh failed.");
+
+      const { error: updateError } = await db.from("social_accounts").update({
+        access_token_encrypted: await encryptInstagramToken(refreshPayload.access_token),
+        token_expires_at: new Date(Date.now() + Number(refreshPayload.expires_in ?? 60 * 24 * 60 * 60) * 1000).toISOString(),
         connection_status: "connected",
         last_synced_at: new Date().toISOString(),
       }).eq("id", accountId);

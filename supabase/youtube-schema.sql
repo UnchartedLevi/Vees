@@ -5,6 +5,7 @@ alter table public.workspaces add column if not exists plan_tier text not null d
 alter table public.workspaces add constraint workspaces_plan_tier_check check (plan_tier in ('free','pro','agency')) not valid;
 alter table public.workspaces validate constraint workspaces_plan_tier_check;
 
+alter table public.social_accounts add column if not exists scopes text[];
 alter table public.social_accounts add column if not exists provider_meta jsonb;
 
 alter table public.posts add column if not exists is_short boolean default false;

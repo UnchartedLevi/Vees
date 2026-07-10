@@ -1,4 +1,4 @@
-import { assertWorkspaceMember, authenticatedUser, corsHeaders, json, redirectUri, requireEnv, serviceClient, sha256, youtubeScopes } from "../_shared/youtube.ts";
+import { assertWorkspaceMember, authenticatedUser, corsHeaders, instagramScopes, json, redirectUri, requireEnv, serviceClient, sha256 } from "../_shared/instagram.ts";
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -17,11 +17,11 @@ Deno.serve(async (request) => {
 
     const state = crypto.randomUUID();
     const stateHash = await sha256(state);
-    await db.from("oauth_states").delete().eq("provider", "youtube").eq("workspace_id", workspaceId).eq("user_id", user.id);
+    await db.from("oauth_states").delete().eq("provider", "instagram").eq("workspace_id", workspaceId).eq("user_id", user.id);
     const { error: stateError } = await db.from("oauth_states").insert({
       workspace_id: workspaceId,
       user_id: user.id,
-      provider: "youtube",
+      provider: "instagram",
       state_hash: stateHash,
       import_mode: importMode,
       expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
@@ -29,18 +29,15 @@ Deno.serve(async (request) => {
     if (stateError) throw stateError;
 
     const params = new URLSearchParams({
-      client_id: requireEnv("YOUTUBE_CLIENT_ID"),
+      client_id: requireEnv("INSTAGRAM_CLIENT_ID"),
       response_type: "code",
-      scope: youtubeScopes.join(" "),
+      scope: instagramScopes.join(","),
       redirect_uri: redirectUri(request),
-      access_type: "offline",
-      prompt: "consent",
-      include_granted_scopes: "true",
       state,
     });
 
-    return json({ authorizeUrl: `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}` });
+    return json({ authorizeUrl: `https://www.instagram.com/oauth/authorize?${params.toString()}` });
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "Could not start YouTube OAuth" }, 500);
+    return json({ error: error instanceof Error ? error.message : "Could not start Instagram OAuth" }, 500);
   }
 });

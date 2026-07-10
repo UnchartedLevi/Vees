@@ -25,6 +25,35 @@ export const userClient = (authorization: string) => createClient(requireEnv("SU
   auth: { persistSession: false },
 });
 
+export async function authenticatedUser(authorization: string) {
+  const token = authorization.replace(/^Bearer\s+/i, "").trim();
+  if (!token) throw new Error("Missing bearer token");
+
+  const db = serviceClient();
+  const { data: { user }, error } = await db.auth.getUser(token);
+  if (error || !user) throw new Error("Invalid user session");
+
+  return { user };
+}
+
+export async function assertWorkspaceMember(db: ReturnType<typeof serviceClient>, workspaceId: string, userId: string) {
+  const { data: workspace, error: workspaceError } = await db
+    .from("workspaces")
+    .select("id, owner_id")
+    .eq("id", workspaceId)
+    .single();
+  if (workspaceError || !workspace) return false;
+  if (workspace.owner_id === userId) return true;
+
+  const { data: member, error: memberError } = await db
+    .from("workspace_members")
+    .select("id")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", userId)
+    .maybeSingle();
+  return !memberError && Boolean(member);
+}
+
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 

@@ -1,4 +1,5 @@
 import { corsHeaders, decryptToken, encryptToken, json, requireEnv, serviceClient, userClient } from "../_shared/tiktok.ts";
+import { decryptToken as decryptInstagramToken } from "../_shared/instagram.ts";
 import {
   decryptToken as decryptYouTubeToken,
   encryptToken as encryptYouTubeToken,
@@ -211,6 +212,81 @@ async function syncYouTube(db: Db, workspaceId: string, accountId: string, accou
   });
 }
 
+async function syncInstagram(db: Db, workspaceId: string, accountId: string, account: any) {
+  const accessToken = await decryptInstagramToken(account.access_token_encrypted);
+  if (!accessToken) throw new Error("Instagram account is missing an access token.");
+
+  // Long-lived Instagram tokens last 60 days; refresh once inside the last 5 days of validity.
+  if (account.token_expires_at && new Date(account.token_expires_at).getTime() < Date.now() + 5 * 24 * 60 * 60 * 1000) {
+    const refreshResponse = await fetch(`https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${accessToken}`);
+    const refreshPayload = await refreshResponse.json();
+    if (refreshResponse.ok && refreshPayload.access_token) {
+      await db.from("social_accounts").update({
+        access_token_encrypted: await encryptInstagramToken(refreshPayload.access_token),
+        token_expires_at: new Date(Date.now() + Number(refreshPayload.expires_in ?? 60 * 24 * 60 * 60) * 1000).toISOString(),
+      }).eq("id", accountId);
+    }
+  }
+
+  const currentToken = (await decryptInstagramToken((await db.from("social_accounts").select("access_token_encrypted").eq("id", accountId).single()).data?.access_token_encrypted)) ?? accessToken;
+
+  const mediaFields = "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count";
+  const mediaResponse = await fetch(`https://graph.instagram.com/me/media?fields=${mediaFields}&limit=20&access_token=${currentToken}`);
+  const mediaPayload = await mediaResponse.json();
+  if (!mediaResponse.ok) throw new Error(mediaPayload.error?.message ?? "Instagram media sync failed.");
+  const media: any[] = mediaPayload?.data ?? [];
+
+  // Reach, saved, and shares come from a separate Insights call per media item and are only
+  // fetched on paid plans — see src/utils/planLimits.ts. Free plans get like/comment counts,
+  // which are already included on the media object above at no extra API cost.
+  const tier = await planTier(db, workspaceId);
+  const includeInsights = tier !== "free";
+  const insightsByMedia = new Map<string, { reach: number; saved: number; shares: number }>();
+
+  if (includeInsights) {
+    await Promise.all(media.map(async (item) => {
+      try {
+        const insightsResponse = await fetch(`https://graph.instagram.com/${item.id}/insights?metric=reach,saved,shares&access_token=${currentToken}`);
+        const insightsPayload = await insightsResponse.json();
+        if (!insightsResponse.ok) return;
+        const values: Record<string, number> = {};
+        for (const entry of insightsPayload?.data ?? []) values[entry.name] = Number(entry.values?.[0]?.value ?? 0);
+        insightsByMedia.set(item.id, { reach: values.reach ?? 0, saved: values.saved ?? 0, shares: values.shares ?? 0 });
+      } catch {
+        // Insights can fail per media type/age; skip rather than fail the whole sync.
+      }
+    }));
+  }
+
+  const captionTypeMap: Record<string, string> = { IMAGE: "Image", VIDEO: "Video", CAROUSEL_ALBUM: "Carousel", REELS: "Reel" };
+  return media.map((item) => {
+    const likes = Number(item.like_count ?? 0);
+    const comments = Number(item.comments_count ?? 0);
+    const insight = insightsByMedia.get(item.id);
+    const reach = insight?.reach ?? 0;
+    return {
+      workspace_id: workspaceId,
+      social_account_id: accountId,
+      platform: "Instagram",
+      title: item.caption ? String(item.caption).slice(0, 120) : "Instagram post",
+      caption: item.caption ? String(item.caption).slice(0, 500) : null,
+      content_type: captionTypeMap[item.media_type] ?? "Image",
+      status: "published",
+      media_url: item.thumbnail_url ?? item.media_url ?? null,
+      posted_at: item.timestamp ?? null,
+      likes,
+      comments,
+      shares: insight?.shares ?? 0,
+      saves: insight?.saved ?? 0,
+      reach,
+      impressions: reach,
+      engagement_rate: reach ? ((likes + comments + (insight?.shares ?? 0) + (insight?.saved ?? 0)) / reach) * 100 : 0,
+      source: "instagram",
+      external_post_id: item.id,
+    };
+  });
+}
+
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -232,6 +308,7 @@ Deno.serve(async (request) => {
     let posts: any[];
     if (account.platform === "TikTok") posts = await syncTikTok(db, workspaceId, accountId, account);
     else if (account.platform === "YouTube Shorts") posts = await syncYouTube(db, workspaceId, accountId, account);
+    else if (account.platform === "Instagram") posts = await syncInstagram(db, workspaceId, accountId, account);
     else return json({ error: `Sync is not supported for ${account.platform} yet` }, 400);
 
     if (posts.length) {

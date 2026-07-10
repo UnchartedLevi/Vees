@@ -1,6 +1,6 @@
-import { appBaseUrl, corsHeaders, decryptTokenWithKey, encryptTokenWithKey, json, planTier, redirect, requireEnv, serviceClient, sha256, userClient } from "./core.ts";
+import { appBaseUrl, assertWorkspaceMember, authenticatedUser, corsHeaders, decryptTokenWithKey, encryptTokenWithKey, json, planTier, redirect, requireEnv, serviceClient, sha256, userClient } from "./core.ts";
 
-export { appBaseUrl, corsHeaders, json, planTier, redirect, requireEnv, serviceClient, sha256, userClient };
+export { appBaseUrl, assertWorkspaceMember, authenticatedUser, corsHeaders, json, planTier, redirect, requireEnv, serviceClient, sha256, userClient };
 
 // youtube.readonly covers channel details + video/playlist listing (Shorts included).
 // yt-analytics.readonly unlocks retention, watch time, and traffic-source data via the

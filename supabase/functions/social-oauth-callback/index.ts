@@ -1,4 +1,5 @@
 import { redirect, requireEnv, serviceClient, sha256 } from "../_shared/core.ts";
+import { encryptToken as encryptInstagramToken, redirectUri as instagramRedirectUri } from "../_shared/instagram.ts";
 import { encryptToken as encryptTikTokToken, redirectUri as tiktokRedirectUri } from "../_shared/tiktok.ts";
 import { encryptToken as encryptYouTubeToken, redirectUri as youtubeRedirectUri } from "../_shared/youtube.ts";
 
@@ -119,6 +120,68 @@ async function completeYouTube(request: Request, code: string, stateRow: StateRo
   }
 }
 
+async function completeInstagram(request: Request, rawCode: string, stateRow: StateRow, db: Db) {
+  // Instagram sometimes appends a "#_" suffix to the returned code — strip it before exchange.
+  const code = rawCode.replace(/#_$/, "");
+
+  const shortLivedResponse = await fetch("https://api.instagram.com/oauth/access_token", {
+    method: "POST",
+    headers: { "content-type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: requireEnv("INSTAGRAM_CLIENT_ID"),
+      client_secret: requireEnv("INSTAGRAM_CLIENT_SECRET"),
+      grant_type: "authorization_code",
+      redirect_uri: instagramRedirectUri(request),
+      code,
+    }),
+  });
+  const shortLivedPayload = await shortLivedResponse.json();
+  if (!shortLivedResponse.ok) throw new Error(shortLivedPayload.error_message ?? shortLivedPayload.error_description ?? "Instagram token exchange failed.");
+  const shortLivedToken = shortLivedPayload.access_token as string;
+  const igUserId = String(shortLivedPayload.user_id ?? "");
+
+  const longLivedParams = new URLSearchParams({
+    grant_type: "ig_exchange_token",
+    client_secret: requireEnv("INSTAGRAM_CLIENT_SECRET"),
+    access_token: shortLivedToken,
+  });
+  const longLivedResponse = await fetch(`https://graph.instagram.com/access_token?${longLivedParams.toString()}`);
+  const longLivedPayload = await longLivedResponse.json();
+  if (!longLivedResponse.ok) throw new Error(longLivedPayload.error?.message ?? "Could not obtain a long-lived Instagram token.");
+  const accessToken = longLivedPayload.access_token as string;
+  const expiresAt = new Date(Date.now() + Number(longLivedPayload.expires_in ?? 60 * 24 * 60 * 60) * 1000).toISOString();
+
+  const profileResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type&access_token=${accessToken}`);
+  const profilePayload = await profileResponse.json();
+  if (!profileResponse.ok) throw new Error(profilePayload.error?.message ?? "Could not read the Instagram profile.");
+
+  const accountId = String(profilePayload.id ?? igUserId);
+  const values = {
+    workspace_id: stateRow.workspace_id,
+    platform: "Instagram",
+    account_name: profilePayload.username ?? "Instagram account",
+    account_handle: profilePayload.username ? `@${profilePayload.username}` : accountId,
+    provider_account_id: accountId,
+    connection_status: "connected",
+    import_mode: stateRow.import_mode,
+    access_token_encrypted: await encryptInstagramToken(accessToken),
+    refresh_token_encrypted: null,
+    token_expires_at: expiresAt,
+    scopes: ["instagram_business_basic"],
+    last_synced_at: new Date().toISOString(),
+    provider_meta: { accountType: profilePayload.account_type ?? null },
+  };
+
+  const { data: existing } = await db.from("social_accounts").select("id").eq("workspace_id", stateRow.workspace_id).eq("platform", "Instagram").eq("provider_account_id", accountId).maybeSingle();
+  if (existing) {
+    const { error: updateError } = await db.from("social_accounts").update(values).eq("id", existing.id);
+    if (updateError) throw updateError;
+  } else {
+    const { error: insertError } = await db.from("social_accounts").insert(values);
+    if (insertError) throw insertError;
+  }
+}
+
 Deno.serve(async (request) => {
   const url = new URL(request.url);
   const error = url.searchParams.get("error") ?? url.searchParams.get("error_description");
@@ -138,6 +201,7 @@ Deno.serve(async (request) => {
 
     if (provider === "tiktok") await completeTikTok(request, code, stateRow, db);
     else if (provider === "youtube") await completeYouTube(request, code, stateRow, db);
+    else if (provider === "instagram") await completeInstagram(request, code, stateRow, db);
     else throw new Error(`Unsupported provider: ${provider}`);
 
     await db.from("oauth_states").delete().eq("id", stateRow.id);
