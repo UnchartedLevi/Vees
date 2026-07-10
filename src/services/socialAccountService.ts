@@ -5,7 +5,7 @@ import { mapAccount, mapSnapshot } from "./mappers";
 // Keep the browser query compatible with databases created before the TikTok
 // connector migration added social_accounts.scopes. Edge functions can still
 // write scopes after supabase/tiktok-schema.sql is applied.
-const accountColumns = "id,workspace_id,platform,account_name,account_handle,connection_status,import_mode,last_synced_at";
+const accountColumns = "id,workspace_id,platform,account_name,account_handle,connection_status,import_mode,last_synced_at,provider_meta";
 
 export async function getSocialAccounts(workspaceId: string) {
   const { data, error } = await requireSupabase().from("social_accounts").select(accountColumns).eq("workspace_id", workspaceId);

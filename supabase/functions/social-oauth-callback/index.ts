@@ -92,6 +92,8 @@ async function completeYouTube(request: Request, code: string, stateRow: StateRo
   const accountName = channel.snippet?.title ?? "YouTube channel";
   const accountHandle = channel.snippet?.customUrl ? `@${String(channel.snippet.customUrl).replace(/^@/, "")}` : channelId;
   const uploadsPlaylistId = channel.contentDetails?.relatedPlaylists?.uploads as string | undefined;
+  const thumbnails = channel.snippet?.thumbnails ?? {};
+  const thumbnailUrl = thumbnails.high?.url ?? thumbnails.medium?.url ?? thumbnails.default?.url ?? null;
 
   const expiresAt = new Date(Date.now() + Number(tokenPayload.expires_in ?? 0) * 1000).toISOString();
   const values = {
@@ -107,7 +109,7 @@ async function completeYouTube(request: Request, code: string, stateRow: StateRo
     token_expires_at: expiresAt,
     scopes,
     last_synced_at: new Date().toISOString(),
-    provider_meta: { uploadsPlaylistId },
+    provider_meta: { uploadsPlaylistId, thumbnailUrl },
   };
 
   const { data: existing } = await db.from("social_accounts").select("id").eq("workspace_id", stateRow.workspace_id).eq("platform", "YouTube Shorts").eq("provider_account_id", channelId).maybeSingle();

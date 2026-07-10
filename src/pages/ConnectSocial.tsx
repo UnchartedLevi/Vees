@@ -151,6 +151,33 @@ const PlatformIcon = ({ name }: { name: SocialPlatform }) => {
   );
 };
 
+const accountAvatar = (account: { accountName: string; accountHandle: string; providerMeta?: { thumbnailUrl?: string | null } }) =>
+  account.providerMeta?.thumbnailUrl || "";
+
+const ConnectedAvatar = ({ account }: { account: { accountName: string; accountHandle: string; providerMeta?: { thumbnailUrl?: string | null } } }) => {
+  const src = accountAvatar(account);
+  const fallback = (account.accountName || account.accountHandle || "A").trim().slice(0, 1).toUpperCase();
+  return src ? (
+    <img
+      src={src}
+      alt=""
+      className="h-11 w-11 shrink-0 rounded-full border border-slate-200 bg-slate-100 object-cover shadow-sm"
+      referrerPolicy="no-referrer"
+    />
+  ) : (
+    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-sm font-bold text-emerald-700 shadow-sm">
+      {fallback}
+    </span>
+  );
+};
+
+const formatLastSynced = (value?: string) => {
+  if (!value) return "Not synced yet";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Sync date unavailable";
+  return `Synced ${date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+};
+
 export default function ConnectSocial() {
   const { workspace, socialAccounts, refresh } = useData();
   const location = useLocation();
@@ -289,16 +316,39 @@ export default function ConnectSocial() {
         <div className="grid gap-3 lg:grid-cols-3">
           {providers.map((provider) => {
             const isLive = provider.status === "live";
+            const connectedAccount = socialAccounts.find((account) => account.platform === provider.name && account.connectionStatus === "connected");
             return (
-              <article key={provider.name} className="flex min-h-[260px] flex-col rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md">
+              <article
+                key={provider.name}
+                className={`flex min-h-[260px] flex-col rounded-lg border bg-white p-4 shadow-sm transition hover:shadow-md ${
+                  connectedAccount ? "border-emerald-200 ring-1 ring-emerald-100" : "border-slate-200 hover:border-slate-300"
+                }`}
+              >
                 <div className="flex items-start justify-between gap-3">
-                  <PlatformIcon name={provider.name} />
-                  <StatusBadge status={provider.status} />
+                  {connectedAccount ? <ConnectedAvatar account={connectedAccount} /> : <PlatformIcon name={provider.name} />}
+                  {connectedAccount ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">
+                      <CheckCircle2 size={12} />
+                      Connected
+                    </span>
+                  ) : (
+                    <StatusBadge status={provider.status} />
+                  )}
                 </div>
 
                 <div className="mt-4 flex-1">
                   <h3 className="text-[15px] font-semibold text-slate-950">{provider.displayName}</h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">{provider.note}</p>
+                  {connectedAccount ? (
+                    <div className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50/70 p-3">
+                      <p className="truncate text-sm font-semibold text-slate-950">{connectedAccount.accountName}</p>
+                      <p className="mt-0.5 truncate text-xs text-emerald-800">{connectedAccount.accountHandle}</p>
+                      <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.12em] text-emerald-700">
+                        {formatLastSynced(connectedAccount.lastSyncedAt)}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm leading-6 text-slate-500">{provider.note}</p>
+                  )}
                   <div className="mt-4 flex flex-wrap gap-2">
                     {provider.features.map((feature) => (
                       <span key={feature} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-600">
@@ -308,7 +358,26 @@ export default function ConnectSocial() {
                   </div>
                 </div>
 
-                {isLive ? (
+                {connectedAccount ? (
+                  <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                    <button
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-white px-3 py-2.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:text-emerald-400"
+                      disabled={syncingId === connectedAccount.id}
+                      onClick={() => void syncProvider(connectedAccount.id)}
+                    >
+                      <RefreshCw size={15} className={syncingId === connectedAccount.id ? "animate-spin" : ""} />
+                      {syncingId === connectedAccount.id ? "Syncing..." : "Sync"}
+                    </button>
+                    <button
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                      disabled={Boolean(connectingProvider)}
+                      onClick={() => void connectProvider(provider.name)}
+                    >
+                      <Plug size={15} />
+                      Reconnect
+                    </button>
+                  </div>
+                ) : isLive ? (
                   <button
                     className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
                     disabled={Boolean(connectingProvider)}
@@ -413,7 +482,7 @@ export default function ConnectSocial() {
               return (
                 <div key={account.id} className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex min-w-0 items-center gap-3">
-                    <PlatformIcon name={account.platform} />
+                    <ConnectedAvatar account={account} />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-slate-950">
                         {labelFor(account.platform)} - {account.accountName}
@@ -421,6 +490,12 @@ export default function ConnectSocial() {
                       <p className="truncate text-xs leading-5 text-slate-500">
                         {account.accountHandle} - {account.importMode}
                       </p>
+                      {account.connectionStatus === "connected" && (
+                        <p className="mt-0.5 inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700">
+                          <CheckCircle2 size={12} />
+                          Connected
+                        </p>
+                      )}
                     </div>
                   </div>
                   {canSync ? (
