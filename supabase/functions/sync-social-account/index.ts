@@ -122,14 +122,22 @@ async function syncYouTube(db: Db, workspaceId: string, accountId: string, accou
   }
 
   let uploadsPlaylistId = account.provider_meta?.uploadsPlaylistId as string | undefined;
-  if (!uploadsPlaylistId) {
-    const channelResponse = await fetch("https://www.googleapis.com/youtube/v3/channels?part=contentDetails&mine=true", {
+  let thumbnailUrl = account.provider_meta?.thumbnailUrl as string | undefined;
+  if (!uploadsPlaylistId || !thumbnailUrl) {
+    const channelResponse = await fetch("https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&mine=true", {
       headers: { authorization: `Bearer ${accessToken}` },
     });
     const channelPayload = await channelResponse.json();
     if (!channelResponse.ok) throw new Error(channelPayload.error?.message ?? "Could not read the YouTube channel.");
-    uploadsPlaylistId = channelPayload?.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
-    if (uploadsPlaylistId) await db.from("social_accounts").update({ provider_meta: { uploadsPlaylistId } }).eq("id", accountId);
+    const channel = channelPayload?.items?.[0];
+    uploadsPlaylistId = uploadsPlaylistId ?? channel?.contentDetails?.relatedPlaylists?.uploads;
+    const thumbnails = channel?.snippet?.thumbnails ?? {};
+    thumbnailUrl = thumbnailUrl ?? thumbnails.high?.url ?? thumbnails.medium?.url ?? thumbnails.default?.url;
+    if (uploadsPlaylistId || thumbnailUrl) {
+      await db.from("social_accounts").update({
+        provider_meta: { ...(account.provider_meta ?? {}), uploadsPlaylistId, thumbnailUrl },
+      }).eq("id", accountId);
+    }
   }
   if (!uploadsPlaylistId) throw new Error("Could not find the channel's uploads playlist.");
 
