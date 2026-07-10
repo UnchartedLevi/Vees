@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, CircleDashed, Clock3, Link2, Plug, RefreshCw, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { AlertCircle, CheckCircle2, CircleDashed, Clock3, Loader2, Link2, Plug, RefreshCw, ShieldCheck, Sparkles, Zap } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useData } from "../context/DataContext";
 import { demoConnector } from "../integrations/social/demoConnector";
@@ -230,6 +230,23 @@ export default function ConnectSocial() {
 
   return (
     <div className="space-y-7">
+      {connectingProvider && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/85 px-5 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-lg border border-white/10 bg-white p-6 text-center shadow-2xl">
+            <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-slate-200 bg-slate-50">
+              <SocialPlatformIcon platform={connectingProvider} size="lg" />
+            </span>
+            <div className="mt-5 flex items-center justify-center gap-2 text-sm font-semibold text-slate-950">
+              <Loader2 className="animate-spin" size={18} />
+              Opening {labelFor(connectingProvider)}
+            </div>
+            <p className="mt-3 text-sm leading-6 text-slate-500">
+              Preparing the secure sign-in page. This will redirect automatically.
+            </p>
+          </div>
+        </div>
+      )}
+
       <PageHeader
         eyebrow="Channel connections"
         title="Connect social accounts"
