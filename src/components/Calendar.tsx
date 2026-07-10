@@ -8,6 +8,7 @@ import { accountForPlatform, orderedPlatforms, platformLabel } from "../utils/ch
 import Badge from "./Badge";
 import Modal from "./Modal";
 import PageHeader from "./PageHeader";
+import SocialPlatformIcon from "./SocialPlatformIcon";
 
 const statuses: ScheduleStatus[] = ["Idea", "Draft", "In Review", "Approved", "Scheduled", "Published", "Failed"];
 
@@ -114,7 +115,7 @@ export default function Calendar({ scheduledPosts, setScheduledPosts, setIdeas, 
             <button onClick={() => setPlatform("All")} className={`shrink-0 rounded-xl px-3 py-2 text-sm font-semibold ${platform === "All" ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-500"}`}>All</button>
             {channelOrder.map((item) => {
               const account = accountForPlatform(socialAccounts, item);
-              return <button key={item} onClick={() => setPlatform(item)} className={`shrink-0 rounded-xl border px-3 py-2 text-sm font-semibold ${platform === item ? "border-slate-950 bg-slate-950 text-white" : account ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-500"}`}>{platformLabel(item)}</button>;
+              return <button key={item} onClick={() => setPlatform(item)} className={`inline-flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold ${platform === item ? "border-slate-950 bg-slate-950 text-white" : account ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-500"}`}><SocialPlatformIcon platform={item} size="sm" />{platformLabel(item)}</button>;
             })}
           </div>
           <select aria-label="Filter calendar by status" className="input xl:w-44" value={status} onChange={(e) => setStatus(e.target.value as "All" | ScheduleStatus)}>
@@ -145,7 +146,7 @@ export default function Calendar({ scheduledPosts, setScheduledPosts, setIdeas, 
                       {dayPosts.slice(0, 3).map((post) => (
                         <div key={post.id} className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1">
                           <p className="truncate text-[11px] font-semibold text-slate-800">{post.title}</p>
-                          <p className="truncate text-[10px] text-slate-400">{platformLabel(post.platform)} / {post.contentType}</p>
+                          <p className="flex items-center gap-1 truncate text-[10px] text-slate-400"><SocialPlatformIcon platform={post.platform} size="sm" />{platformLabel(post.platform)} / {post.contentType}</p>
                         </div>
                       ))}
                       {dayPosts.length > 3 && <p className="text-[10px] font-semibold text-slate-400">+{dayPosts.length - 3} more</p>}
@@ -164,7 +165,7 @@ export default function Calendar({ scheduledPosts, setScheduledPosts, setIdeas, 
             <article key={post.id} className="card p-4">
               <div className="flex items-center justify-between gap-3">
                 <Badge>{post.status}</Badge>
-                <span className="text-xs font-semibold text-slate-400">{platformLabel(post.platform)}</span>
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400"><SocialPlatformIcon platform={post.platform} size="sm" />{platformLabel(post.platform)}</span>
               </div>
               <h3 className="mt-4 text-sm font-semibold leading-6 text-slate-800">{post.title}</h3>
               <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-400">{post.notes || post.contentGoal}</p>

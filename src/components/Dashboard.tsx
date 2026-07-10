@@ -10,6 +10,7 @@ import {
 import StatCard from "./StatCard";
 import PageHeader from "./PageHeader";
 import EmptyState from "./EmptyState";
+import SocialPlatformIcon from "./SocialPlatformIcon";
 
 export default function Dashboard({ posts, scheduledPosts, ideas, workspace, socialAccounts, onNavigate, onConnect }: AppDataProps) {
   const topPosts = getTopPosts(posts);
@@ -61,7 +62,10 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
             <article key={account.id} className="rounded-[16px] border border-emerald-200 bg-white p-4 shadow-card">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">{platformLabel(account.platform)}</p>
+                  <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">
+                    <SocialPlatformIcon platform={account.platform} size="sm" />
+                    {platformLabel(account.platform)}
+                  </p>
                   <h3 className="mt-2 truncate text-[17px] font-semibold text-slate-950">{account.accountName}</h3>
                   <p className="mt-1 truncate text-sm text-slate-500">{account.accountHandle}</p>
                 </div>
@@ -100,7 +104,10 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
               className="rounded-[14px] border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
               onClick={onConnect}
             >
-              <p className="text-sm font-semibold text-slate-950">{platformLabel(platform)}</p>
+              <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                <SocialPlatformIcon platform={platform} size="md" />
+                {platformLabel(platform)}
+              </p>
               <p className="mt-1 text-xs leading-5 text-slate-500">{platform === "TikTok" ? "Not ready yet" : "Connect or simulate"}</p>
             </button>
           ))}
@@ -168,7 +175,10 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
             {platformTotals.map(({ platform, rate }, i) => (
               <div key={platform}>
                 <div className="mb-1.5 flex justify-between text-[13px]">
-                  <span className="font-medium" style={{ color: "#1D1D1F" }}>{platform}</span>
+                  <span className="inline-flex items-center gap-2 font-medium" style={{ color: "#1D1D1F" }}>
+                    <SocialPlatformIcon platform={platform} size="sm" />
+                    {platformLabel(platform)}
+                  </span>
                   <span style={{ color: "#86868B" }}>{rate.toFixed(1)}%</span>
                 </div>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#F5F5F7" }}>
@@ -228,7 +238,10 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
                     {post.title}
                   </p>
                   <p className="mt-0.5 text-[12px]" style={{ color: "#86868B" }}>
-                    {post.platform} · {post.contentType}
+                    <span className="inline-flex items-center gap-1.5">
+                      <SocialPlatformIcon platform={post.platform} size="sm" />
+                      {platformLabel(post.platform)} · {post.contentType}
+                    </span>
                   </p>
                 </div>
                 <p className="text-[15px] font-semibold" style={{ color: "#1D1D1F" }}>

@@ -7,6 +7,7 @@ import { metaConnector } from "../integrations/social/metaConnector";
 import { youtubeConnector } from "../integrations/social/youtubeConnector";
 import type { ImportMode, SocialPlatform } from "../types";
 import PageHeader from "../components/PageHeader";
+import SocialPlatformIcon from "../components/SocialPlatformIcon";
 
 type ProviderStatus = "live" | "blocked" | "planned";
 
@@ -100,53 +101,10 @@ const StatusBadge = ({ status }: { status: ProviderStatus }) => {
   );
 };
 
-const InstagramMark = () => (
-  <svg aria-hidden="true" viewBox="0 0 48 48" className="h-7 w-7">
-    <defs>
-      <linearGradient id="instagram-gradient" x1="8" x2="40" y1="40" y2="8" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#FEDA75" />
-        <stop offset="0.35" stopColor="#FA7E1E" />
-        <stop offset="0.65" stopColor="#D62976" />
-        <stop offset="1" stopColor="#4F5BD5" />
-      </linearGradient>
-    </defs>
-    <rect width="34" height="34" x="7" y="7" rx="10" fill="url(#instagram-gradient)" />
-    <circle cx="24" cy="24" r="8" fill="none" stroke="#fff" strokeWidth="3.5" />
-    <circle cx="33" cy="15" r="2.6" fill="#fff" />
-  </svg>
-);
-
-const YouTubeMark = () => (
-  <svg aria-hidden="true" viewBox="0 0 48 48" className="h-7 w-7">
-    <rect x="5" y="12" width="38" height="24" rx="7" fill="#FF0033" />
-    <path d="M21 18.5v11l10-5.5-10-5.5Z" fill="#fff" />
-  </svg>
-);
-
-const TikTokMark = () => (
-  <svg aria-hidden="true" viewBox="0 0 48 48" className="h-7 w-7">
-    <path d="M29.5 8c1 6.5 4.6 9.7 10.5 10.1v7.1c-3.9.1-7.3-1-10.2-3.1v11.2c0 7.2-5.1 11.7-11.8 11.7-6.1 0-10.5-4-10.5-9.8 0-6.5 5.2-10.3 12.4-9.7v7.3c-3.2-.7-5.3.4-5.3 2.5 0 1.8 1.4 3 3.5 3 2.6 0 4.1-1.5 4.1-4.7V8h7.3Z" fill="#111" />
-    <path d="M32.3 14.1c1.6 2.3 4.2 3.6 7.7 3.9v3.1c-3.8-.2-7.1-1.5-9.5-3.8v-3.2h1.8Z" fill="#25F4EE" opacity="0.9" />
-    <path d="M20 28.6v3.2c-3.5-.7-5.8.6-5.8 3 0 1 .4 1.9 1.1 2.5-3.2-.1-5.4-2-5.4-4.9 0-3.2 2.8-4.9 7.1-4.5 1 .1 2 .3 3 .7Z" fill="#FE2C55" opacity="0.85" />
-  </svg>
-);
-
-const FallbackMark = ({ name }: { name: SocialPlatform }) => (
-  <span className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-100 text-xs font-bold text-slate-600">
-    {labelFor(name).slice(0, 2)}
-  </span>
-);
-
 const PlatformIcon = ({ name }: { name: SocialPlatform }) => {
-  const icon =
-    name === "Instagram" ? <InstagramMark />
-    : name === "YouTube Shorts" ? <YouTubeMark />
-    : name === "TikTok" ? <TikTokMark />
-    : <FallbackMark name={name} />;
-
   return (
     <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white shadow-sm">
-      {icon}
+      <SocialPlatformIcon platform={name} size="lg" />
     </span>
   );
 };
@@ -337,7 +295,10 @@ export default function ConnectSocial() {
                 </div>
 
                 <div className="mt-4 flex-1">
-                  <h3 className="text-[15px] font-semibold text-slate-950">{provider.displayName}</h3>
+                  <h3 className="flex items-center gap-2 text-[15px] font-semibold text-slate-950">
+                    <SocialPlatformIcon platform={provider.name} size="sm" />
+                    {provider.displayName}
+                  </h3>
                   {connectedAccount ? (
                     <div className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50/70 p-3">
                       <p className="truncate text-sm font-semibold text-slate-950">{connectedAccount.accountName}</p>
@@ -485,7 +446,10 @@ export default function ConnectSocial() {
                     <ConnectedAvatar account={account} />
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-slate-950">
-                        {labelFor(account.platform)} - {account.accountName}
+                        <span className="inline-flex items-center gap-2">
+                          <SocialPlatformIcon platform={account.platform} size="sm" />
+                          {labelFor(account.platform)} - {account.accountName}
+                        </span>
                       </p>
                       <p className="truncate text-xs leading-5 text-slate-500">
                         {account.accountHandle} - {account.importMode}
