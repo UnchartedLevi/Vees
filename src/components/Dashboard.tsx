@@ -1,6 +1,8 @@
-import { ArrowUpRight, CalendarCheck, Eye, Heart, Layers3, Lightbulb, Radio, Send, Sparkles, TrendingUp } from "lucide-react";
+import { ArrowUpRight, CalendarCheck, CheckCircle2, Eye, Heart, Layers3, Lightbulb, Link2, Radio, Send, Sparkles, TrendingUp } from "lucide-react";
 import type { AppDataProps } from "../App";
+import type { SocialPlatform } from "../types";
 import { engagementTotal, formatNumber } from "../utils/analytics";
+import { accountForPlatform, orderedPlatforms, platformLabel } from "../utils/channels";
 import {
   generateRecommendations, getAverageEngagementRate, getBestContentType,
   getBestPlatform, getBestPostingDay, getScheduledPostsThisWeek, getTopPosts, getTotalEngagement,
@@ -9,7 +11,7 @@ import StatCard from "./StatCard";
 import PageHeader from "./PageHeader";
 import EmptyState from "./EmptyState";
 
-export default function Dashboard({ posts, scheduledPosts, ideas, workspace, onNavigate }: AppDataProps) {
+export default function Dashboard({ posts, scheduledPosts, ideas, workspace, socialAccounts, onNavigate, onConnect }: AppDataProps) {
   const topPosts = getTopPosts(posts);
   const recommendations = generateRecommendations(posts, scheduledPosts, ideas);
   const recentPosts = [...posts].sort((a, b) => a.datePosted.localeCompare(b.datePosted)).slice(-7);
@@ -24,6 +26,10 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, onN
       rate: getAverageEngagementRate(posts.filter((p) => p.platform === platform)),
     }))
     .sort((a, b) => b.rate - a.rate);
+  const connected = socialAccounts.filter((account) => account.connectionStatus === "connected");
+  const availablePlatforms = orderedPlatforms(socialAccounts).filter((platform) => !accountForPlatform(socialAccounts, platform));
+  const platformPostCount = (platform: SocialPlatform) => posts.filter((post) => post.platform === platform).length;
+  const platformScheduledCount = (platform: SocialPlatform) => scheduledPosts.filter((post) => post.platform === platform).length;
 
   return (
     <div className="space-y-8">
@@ -38,6 +44,68 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, onN
           </button>
         }
       />
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="section-title">Connected accounts</h2>
+            <p className="section-copy">Active channels appear first across analytics, calendar, and planning.</p>
+          </div>
+          <button className="button-secondary" onClick={onConnect}>
+            <Link2 size={15} />
+            Manage
+          </button>
+        </div>
+        <div className="grid gap-3 lg:grid-cols-3">
+          {connected.length ? connected.map((account) => (
+            <article key={account.id} className="rounded-[16px] border border-emerald-200 bg-white p-4 shadow-card">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">{platformLabel(account.platform)}</p>
+                  <h3 className="mt-2 truncate text-[17px] font-semibold text-slate-950">{account.accountName}</h3>
+                  <p className="mt-1 truncate text-sm text-slate-500">{account.accountHandle}</p>
+                </div>
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">
+                  <CheckCircle2 size={12} />
+                  Connected
+                </span>
+              </div>
+              <div className="mt-5 grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-lg font-semibold text-slate-950">{platformPostCount(account.platform)}</p>
+                  <p className="text-xs text-slate-500">tracked posts</p>
+                </div>
+                <div className="rounded-xl bg-slate-50 p-3">
+                  <p className="text-lg font-semibold text-slate-950">{platformScheduledCount(account.platform)}</p>
+                  <p className="text-xs text-slate-500">scheduled</p>
+                </div>
+              </div>
+            </article>
+          )) : (
+            <article className="rounded-[16px] border border-slate-200 bg-white p-5 shadow-card lg:col-span-3">
+              <h3 className="text-sm font-semibold text-slate-950">No connected channels yet</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-500">Connect YouTube or Instagram to make channel-specific analytics and planning available.</p>
+              <button className="button-primary mt-4" onClick={onConnect}>Connect social account</button>
+            </article>
+          )}
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="section-title">Available channels</h2>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          {availablePlatforms.map((platform) => (
+            <button
+              key={platform}
+              className="rounded-[14px] border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+              onClick={onConnect}
+            >
+              <p className="text-sm font-semibold text-slate-950">{platformLabel(platform)}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">{platform === "TikTok" ? "Not ready yet" : "Connect or simulate"}</p>
+            </button>
+          ))}
+        </div>
+      </section>
 
       {/* Stats grid */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

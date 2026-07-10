@@ -1,7 +1,7 @@
 import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { Database, ExternalLink, Loader2, Menu, Search, Unplug } from "lucide-react";
-import type { Campaign, ContentIdea, Post, Report, ScheduledPost, Workspace } from "./types";
+import { Database, ExternalLink, Loader2, Menu, Search } from "lucide-react";
+import type { Campaign, ContentIdea, Post, Report, ScheduledPost, SocialAccount, Workspace } from "./types";
 import { isSupabaseConfigured } from "./lib/supabaseClient";
 import { useAuth } from "./context/AuthContext";
 import { useWorkspace } from "./context/WorkspaceContext";
@@ -15,7 +15,6 @@ import Campaigns from "./components/Campaigns";
 import Reports from "./components/Reports";
 import Chatbot from "./components/Chatbot";
 import Settings from "./components/Settings";
-import EmptyState from "./components/EmptyState";
 import SetupRequired from "./pages/SetupRequired";
 import AuthPage from "./pages/AuthPage";
 import Onboarding from "./pages/Onboarding";
@@ -36,7 +35,9 @@ export interface AppDataProps {
   setCampaigns: Dispatch<SetStateAction<Campaign[]>>;
   reports: Report[];
   setReports: Dispatch<SetStateAction<Report[]>>;
+  socialAccounts: SocialAccount[];
   onNavigate?: (page: Page) => void;
+  onConnect?: () => void;
 }
 
 const paths: Record<Page, string> = {
@@ -50,7 +51,10 @@ const paths: Record<Page, string> = {
   Settings: "/app/settings",
 };
 const pathEntries = Object.entries(paths) as [Page, string][];
-const pageFromPath = (path: string) => pathEntries.find(([, value]) => path === value)?.[0];
+const pageFromPath = (path: string) => {
+  const normalized = path.replace(/\/+$/, "") || "/";
+  return pathEntries.find(([, value]) => normalized === value || normalized.startsWith(`${value}/`))?.[0];
+};
 const Spinner = () => (
   <div className="flex min-h-screen items-center justify-center" style={{ background: "#F5F5F7" }}>
     <Loader2 className="animate-spin" style={{ color: "#86868B" }} size={22} />
@@ -156,7 +160,7 @@ function Shell() {
   const data = useData();
   const { signOut } = useAuth();
   const page = pageFromPath(location.pathname);
-  const props = { ...data, onNavigate: (next: Page) => navigate(paths[next]) };
+  const props = { ...data, onNavigate: (next: Page) => navigate(paths[next]), onConnect: () => navigate("/app/connect") };
 
   const content = () => {
     if (data.loading) return (
@@ -172,8 +176,6 @@ function Shell() {
     );
     if (location.pathname === "/app/connect") return <ConnectSocial />;
     if (!page) return <Navigate to="/app/dashboard" replace />;
-    if (page === "Dashboard" && !data.socialAccounts.length) return <EmptyState icon={Unplug} title="Connect your social accounts to start tracking analytics." description="Connect a demo account to test the workflow, or prepare a real provider connection when your OAuth setup is ready." action={<div className="flex flex-wrap justify-center gap-2"><button className="button-primary" onClick={() => navigate("/app/connect")}>Connect social account</button><button className="button-secondary" onClick={() => navigate("/app/connect")}>Use demo data</button></div>} />;
-    if (page === "Dashboard" && !data.posts.length) return <EmptyState icon={Unplug} title="Your account is connected. Analytics will appear as posts arrive." description="Track a post manually, choose the demo import mode, or wait for a future provider sync to populate your dashboard." action={<button className="button-primary" onClick={() => navigate("/app/analytics")}>Track a post manually</button>} />;
     return {
       Dashboard: <Dashboard {...props} />,
       Calendar: <Calendar {...props} />,
@@ -269,7 +271,9 @@ export default function App() {
     <Route path="/update-password" element={<SignedInOnly><UpdatePassword /></SignedInOnly>} />
     <Route path="/auth/callback" element={<Callback />} />
     <Route path="/onboarding" element={<SignedInOnly><OnboardingRoute /></SignedInOnly>} />
-    <Route path="/app/*" element={<Protected><DataProvider><Shell /></DataProvider></Protected>} />
+    <Route path="/app" element={<Navigate to="/app/dashboard" replace />} />
+    <Route path="/app/:section" element={<Protected><DataProvider><Shell /></DataProvider></Protected>} />
+    <Route path="/app/:section/*" element={<Protected><DataProvider><Shell /></DataProvider></Protected>} />
     <Route path="/" element={<Navigate to="/app/dashboard" replace />} />
     <Route path="*" element={<Navigate to="/app/dashboard" replace />} />
     </>}
