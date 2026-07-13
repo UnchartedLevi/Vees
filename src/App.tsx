@@ -1,6 +1,6 @@
 import { useEffect, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { Database, ExternalLink, Loader2, Menu, Search } from "lucide-react";
+import { AlertCircle, Database, ExternalLink, Loader2, Menu, RefreshCw, Search } from "lucide-react";
 import type { Campaign, ContentIdea, Post, Report, ScheduledPost, SocialAccount, Workspace } from "./types";
 import { isSupabaseConfigured } from "./lib/supabaseClient";
 import { useAuth } from "./context/AuthContext";
@@ -155,6 +155,26 @@ function Callback() {
   return <Spinner />;
 }
 
+function DataLoadError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="card flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex gap-3">
+        <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-rose-50 text-rose-600">
+          <AlertCircle size={18} />
+        </span>
+        <div>
+          <h2 className="text-[17px] font-semibold tracking-tight text-slate-950">Could not load workspace data</h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">{message}</p>
+        </div>
+      </div>
+      <button className="button-primary shrink-0" onClick={onRetry}>
+        <RefreshCw size={15} />
+        Try again
+      </button>
+    </div>
+  );
+}
+
 function Shell() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
@@ -177,9 +197,7 @@ function Shell() {
       </div>
     );
     if (data.error) return (
-      <div className="card p-6 text-[14px]" style={{ color: "#C00" }}>
-        Could not load workspace data: {data.error}
-      </div>
+      <DataLoadError message={data.error} onRetry={() => void data.refresh()} />
     );
     if (location.pathname === "/app/connect") return <ConnectSocial />;
     if (!page) return <Navigate to="/app/dashboard" replace />;

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Workspace } from "../types";
 import { createWorkspace as create, getWorkspaces, updateWorkspace } from "../services/workspaceService";
 import { useAuth } from "./AuthContext";
+import { isTransientFetchError, withRetry } from "../utils/async";
 
 interface WorkspaceValue {
   activeWorkspace: Workspace | null;
@@ -15,6 +16,7 @@ interface WorkspaceValue {
 
 const WorkspaceContext = createContext<WorkspaceValue | null>(null);
 const getErrorMessage = (reason: unknown) => {
+  if (isTransientFetchError(reason)) return "Vees could not reach Supabase. Check your connection, then try again.";
   if (reason instanceof Error) return reason.message;
   if (reason && typeof reason === "object") {
     const value = reason as { code?: string; message?: string };
@@ -38,7 +40,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     }
     setLoading(true);
     try {
-      setWorkspaces(await getWorkspaces());
+      setWorkspaces(await withRetry(getWorkspaces));
       setError("");
     } catch (reason) {
       setError(getErrorMessage(reason));
@@ -56,7 +58,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       return;
     }
     setLoading(true);
-    void getWorkspaces().then((next) => {
+    void withRetry(getWorkspaces).then((next) => {
       if (!active) return;
       setWorkspaces(next);
       setError("");

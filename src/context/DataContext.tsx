@@ -6,6 +6,7 @@ import { addIdea, getIdeas, updateIdea } from "../services/ideaService";
 import { addReport, getReports } from "../services/reportService";
 import { getSnapshots, getSocialAccounts } from "../services/socialAccountService";
 import { useWorkspace } from "./WorkspaceContext";
+import { isTransientFetchError, withRetry } from "../utils/async";
 
 export interface DataValue {
   workspace: Workspace;
@@ -30,6 +31,7 @@ export interface DataValue {
 const DataContext = createContext<DataValue | null>(null);
 
 const getErrorMessage = (reason: unknown, fallback: string) => {
+  if (isTransientFetchError(reason)) return "Vees could not reach Supabase. Check your connection, then try again.";
   if (reason instanceof Error) return reason.message;
   if (reason && typeof reason === "object") {
     const details = reason as { code?: string; message?: string };
@@ -60,14 +62,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (!activeWorkspace) return;
     setLoading(true);
     try {
+      const workspaceId = activeWorkspace.id;
       const [nextPosts, nextScheduled, nextIdeas, nextCampaigns, nextReports, nextAccounts, nextSnapshots] = await Promise.all([
-        getPosts(activeWorkspace.id),
-        getScheduledPosts(activeWorkspace.id),
-        getIdeas(activeWorkspace.id),
-        getCampaigns(activeWorkspace.id),
-        getReports(activeWorkspace.id),
-        getSocialAccounts(activeWorkspace.id),
-        getSnapshots(activeWorkspace.id),
+        withRetry(() => getPosts(workspaceId)),
+        withRetry(() => getScheduledPosts(workspaceId)),
+        withRetry(() => getIdeas(workspaceId)),
+        withRetry(() => getCampaigns(workspaceId)),
+        withRetry(() => getReports(workspaceId)),
+        withRetry(() => getSocialAccounts(workspaceId)),
+        withRetry(() => getSnapshots(workspaceId)),
       ]);
       setPostsState(nextPosts);
       setScheduledState(nextScheduled);
