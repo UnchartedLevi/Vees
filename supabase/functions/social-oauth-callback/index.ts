@@ -169,7 +169,7 @@ async function completeInstagram(request: Request, rawCode: string, stateRow: St
     access_token_encrypted: await encryptInstagramToken(accessToken),
     refresh_token_encrypted: null,
     token_expires_at: expiresAt,
-    scopes: ["instagram_business_basic"],
+    scopes: ["instagram_business_basic", "instagram_business_manage_insights"],
     last_synced_at: new Date().toISOString(),
     provider_meta: { accountType: profilePayload.account_type ?? null },
   };

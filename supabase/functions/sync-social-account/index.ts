@@ -263,20 +263,31 @@ async function syncInstagram(db: Db, workspaceId: string, accountId: string, acc
   // which are already included on the media object above at no extra API cost.
   const tier = await planTier(db, workspaceId);
   const includeInsights = tier !== "free";
-  const insightsByMedia = new Map<string, { reach: number; saved: number; shares: number }>();
+  const insightsByMedia = new Map<string, { reach: number; saved: number; shares: number; views: number; totalInteractions: number }>();
 
   if (includeInsights) {
     await Promise.all(media.map(async (item) => {
-      try {
-        const insightsResponse = await fetch(`https://graph.instagram.com/${item.id}/insights?metric=reach,saved,shares&access_token=${currentToken}`);
-        const insightsPayload = await insightsResponse.json();
-        if (!insightsResponse.ok) return;
-        const values: Record<string, number> = {};
-        for (const entry of insightsPayload?.data ?? []) values[entry.name] = Number(entry.values?.[0]?.value ?? 0);
-        insightsByMedia.set(item.id, { reach: values.reach ?? 0, saved: values.saved ?? 0, shares: values.shares ?? 0 });
-      } catch {
-        // Insights can fail per media type/age; skip rather than fail the whole sync.
+      const values: Record<string, number> = {};
+      const metrics = ["reach", "views", "saved", "saves", "shares", "total_interactions"];
+
+      for (const metric of metrics) {
+        try {
+          const insightsResponse = await fetch(`https://graph.instagram.com/${item.id}/insights?metric=${metric}&access_token=${currentToken}`);
+          const insightsPayload = await insightsResponse.json();
+          if (!insightsResponse.ok) continue;
+          for (const entry of insightsPayload?.data ?? []) values[entry.name] = Number(entry.values?.[0]?.value ?? 0);
+        } catch {
+          // Individual metrics vary by media type and API version. Keep the sync resilient.
+        }
       }
+
+      insightsByMedia.set(item.id, {
+        reach: values.reach ?? values.views ?? 0,
+        saved: values.saved ?? values.saves ?? 0,
+        shares: values.shares ?? 0,
+        views: values.views ?? 0,
+        totalInteractions: values.total_interactions ?? 0,
+      });
     }));
   }
 
@@ -286,6 +297,9 @@ async function syncInstagram(db: Db, workspaceId: string, accountId: string, acc
     const comments = Number(item.comments_count ?? 0);
     const insight = insightsByMedia.get(item.id);
     const reach = insight?.reach ?? 0;
+    const shares = insight?.shares ?? 0;
+    const saves = insight?.saved ?? 0;
+    const totalInteractions = insight?.totalInteractions ?? likes + comments + shares + saves;
     return {
       workspace_id: workspaceId,
       social_account_id: accountId,
@@ -298,11 +312,11 @@ async function syncInstagram(db: Db, workspaceId: string, accountId: string, acc
       posted_at: item.timestamp ?? null,
       likes,
       comments,
-      shares: insight?.shares ?? 0,
-      saves: insight?.saved ?? 0,
+      shares,
+      saves,
       reach,
-      impressions: reach,
-      engagement_rate: reach ? ((likes + comments + (insight?.shares ?? 0) + (insight?.saved ?? 0)) / reach) * 100 : 0,
+      impressions: insight?.views ?? reach,
+      engagement_rate: reach ? (totalInteractions / reach) * 100 : 0,
       source: "instagram",
       external_post_id: item.id,
     };

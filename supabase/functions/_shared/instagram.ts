@@ -6,7 +6,7 @@ export { appBaseUrl, assertWorkspaceMember, authenticatedUser, corsHeaders, json
 // insights (reach, impressions, engagement). We deliberately do not request
 // instagram_business_content_publish / manage_messages / manage_comments — Vees only reads
 // analytics, and requesting unused scopes slows down Meta's app review.
-export const instagramScopes = ["instagram_business_basic"];
+export const instagramScopes = ["instagram_business_basic", "instagram_business_manage_insights"];
 
 export const redirectUri = (request: Request) => Deno.env.get("INSTAGRAM_REDIRECT_URI")
   ?? `${new URL(request.url).origin}/functions/v1/social-oauth-callback`;
