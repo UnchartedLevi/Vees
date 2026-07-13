@@ -5,12 +5,14 @@ interface ModalProps {
   title: string;
   children: ReactNode;
   onClose: () => void;
+  size?: "md" | "xl";
 }
 
-export default function Modal({ title, children, onClose }: ModalProps) {
+export default function Modal({ title, children, onClose, size = "md" }: ModalProps) {
+  const width = size === "xl" ? "max-w-5xl" : "max-w-lg";
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 p-4 backdrop-blur-sm">
-      <div role="dialog" aria-modal="true" aria-label={title} className="max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-6">
+      <div role="dialog" aria-modal="true" aria-label={title} className={`max-h-[calc(100vh-2rem)] w-full ${width} overflow-y-auto rounded-3xl bg-white p-5 shadow-2xl sm:p-6`}>
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
           <button aria-label="Close modal" onClick={onClose} className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700">

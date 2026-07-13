@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { ArrowDownUp, Plus, Trash2 } from "lucide-react";
+import { BarChart3, Bookmark, Eye, Heart, MessageCircle, Plus, Share2, Sparkles, Trash2, TrendingUp } from "lucide-react";
 import type { AppDataProps } from "../App";
 import { contentTypes } from "../data/options";
-import type { ContentType, SocialAccount, SocialPlatform } from "../types";
+import type { ContentType, Post, SocialAccount, SocialPlatform } from "../types";
 import { engagementRate, formatNumber, insightForPost } from "../utils/analytics";
 import { orderedPlatforms, platformLabel } from "../utils/channels";
 import { toDateKey } from "../utils/dates";
@@ -31,12 +31,32 @@ const postsForAccount = (posts: AppDataProps["posts"], account: SocialAccount) =
   return directMatches.length ? directMatches : posts.filter((post) => !post.socialAccountId && post.platform === account.platform);
 };
 
+type SortMode = "rate_desc" | "rate_asc" | "newest" | "oldest";
+
+const sortLabels: Record<SortMode, string> = {
+  rate_desc: "Rate: high to low",
+  rate_asc: "Rate: low to high",
+  newest: "Newest to oldest",
+  oldest: "Oldest to newest",
+};
+
+const metricTotal = (post: Post) => post.likes + post.comments + post.shares + post.saves;
+
+const metricBars = (post: Post) => [
+  { label: "Views", value: post.impressions || post.reach, color: "bg-blue-500", icon: Eye },
+  { label: "Likes", value: post.likes, color: "bg-rose-500", icon: Heart },
+  { label: "Comments", value: post.comments, color: "bg-amber-500", icon: MessageCircle },
+  { label: "Shares", value: post.shares, color: "bg-emerald-500", icon: Share2 },
+  { label: "Saves", value: post.saves, color: "bg-slate-700", icon: Bookmark },
+];
+
 export default function Analytics({ posts, setPosts, campaigns, socialAccounts, onConnect }: AppDataProps) {
   const connectedAccounts = socialAccounts.filter((account) => account.connectionStatus === "connected");
   const [accountFilter, setAccountFilter] = useState("All");
   const [format, setFormat] = useState("All");
-  const [descending, setDescending] = useState(true);
+  const [sortMode, setSortMode] = useState<SortMode>("rate_desc");
   const [open, setOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [form, setForm] = useState(createBlank);
   const channelOrder = orderedPlatforms(socialAccounts);
 
@@ -45,8 +65,12 @@ export default function Analytics({ posts, setPosts, campaigns, socialAccounts, 
     const basePosts = selectedAccount ? postsForAccount(posts, selectedAccount) : posts;
     return basePosts
       .filter((post) => format === "All" || post.contentType === format)
-      .sort((a, b) => descending ? engagementRate(b) - engagementRate(a) : engagementRate(a) - engagementRate(b));
-  }, [accountFilter, connectedAccounts, descending, format, posts]);
+      .sort((a, b) => {
+        if (sortMode === "newest") return b.datePosted.localeCompare(a.datePosted);
+        if (sortMode === "oldest") return a.datePosted.localeCompare(b.datePosted);
+        return sortMode === "rate_desc" ? engagementRate(b) - engagementRate(a) : engagementRate(a) - engagementRate(b);
+      });
+  }, [accountFilter, connectedAccounts, format, posts, sortMode]);
 
   const updateNumber = (key: keyof ReturnType<typeof createBlank>, value: string) => setForm({ ...form, [key]: Number(value) });
   const add = () => {
@@ -118,9 +142,9 @@ export default function Analytics({ posts, setPosts, campaigns, socialAccounts, 
             <option>All</option>
             {contentTypes.map((item) => <option key={item}>{item}</option>)}
           </select>
-          <button className="button-secondary sm:ml-auto" onClick={() => setDescending(!descending)}>
-            <ArrowDownUp size={15} /> Rate: {descending ? "high to low" : "low to high"}
-          </button>
+          <select aria-label="Sort analytics" className="input sm:ml-auto sm:w-52" value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)}>
+            {(Object.keys(sortLabels) as SortMode[]).map((value) => <option key={value} value={value}>{sortLabels[value]}</option>)}
+          </select>
         </div>
 
         <div className="overflow-x-auto">
@@ -132,7 +156,7 @@ export default function Analytics({ posts, setPosts, campaigns, socialAccounts, 
               {filtered.length ? filtered.map((post) => {
                 const account = socialAccounts.find((item) => item.id === post.socialAccountId);
                 return (
-                  <tr key={post.id} className="text-slate-600">
+                  <tr key={post.id} className="cursor-pointer text-slate-600 transition hover:bg-slate-50" onClick={() => setSelectedPost(post)}>
                     <td className="max-w-56 px-5 py-4"><p className="truncate font-semibold text-slate-700">{post.title}</p><p className="mt-1 text-xs text-slate-400">{post.contentType}</p></td>
                     <td className="px-5 py-4">
                       <span className="inline-flex items-center gap-2">
@@ -145,7 +169,7 @@ export default function Analytics({ posts, setPosts, campaigns, socialAccounts, 
                     {[post.likes, post.comments, post.shares, post.saves, post.reach, post.impressions].map((value, index) => <td key={index} className="px-5 py-4">{formatNumber(value)}</td>)}
                     <td className="px-5 py-4 font-semibold text-slate-900">{engagementRate(post).toFixed(1)}%</td>
                     <td className="px-5 py-4"><Badge>{insightForPost(post)}</Badge></td>
-                    <td className="px-5 py-4"><button aria-label={`Delete ${post.title}`} onClick={() => setPosts((current) => current.filter((item) => item.id !== post.id))} className="rounded-lg p-2 text-slate-300 transition hover:bg-rose-50 hover:text-rose-600"><Trash2 size={15} /></button></td>
+                    <td className="px-5 py-4"><button aria-label={`Delete ${post.title}`} onClick={(event) => { event.stopPropagation(); setPosts((current) => current.filter((item) => item.id !== post.id)); }} className="rounded-lg p-2 text-slate-300 transition hover:bg-rose-50 hover:text-rose-600"><Trash2 size={15} /></button></td>
                   </tr>
                 );
               }) : <tr><td colSpan={12} className="px-5 py-12 text-center text-sm text-slate-400">No tracked posts match these filters.</td></tr>}
@@ -169,6 +193,112 @@ export default function Analytics({ posts, setPosts, campaigns, socialAccounts, 
           </div>
         </Modal>
       )}
+
+      {selectedPost && (
+        <Modal title="Video performance" size="xl" onClose={() => setSelectedPost(null)}>
+          <PostPerformanceDetail
+            post={selectedPost}
+            account={socialAccounts.find((item) => item.id === selectedPost.socialAccountId)}
+          />
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+function PostPerformanceDetail({ post, account }: { post: Post; account?: SocialAccount }) {
+  const bars = metricBars(post);
+  const maxValue = Math.max(...bars.map((item) => item.value), 1);
+  const totalEngagement = metricTotal(post);
+  const rate = engagementRate(post);
+  const summary = [
+    { label: "Views", value: post.impressions || post.reach, helper: "Video exposure", icon: Eye, tone: "text-blue-700 bg-blue-50 border-blue-100" },
+    { label: "Engagement", value: totalEngagement, helper: "Likes, comments, shares, saves", icon: Heart, tone: "text-rose-700 bg-rose-50 border-rose-100" },
+    { label: "Rate", value: `${rate.toFixed(1)}%`, helper: "Engagement by reach", icon: TrendingUp, tone: "text-emerald-700 bg-emerald-50 border-emerald-100" },
+    { label: "Saves", value: post.saves, helper: "Intent signal", icon: Bookmark, tone: "text-slate-700 bg-slate-50 border-slate-200" },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <section className="rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="min-w-0">
+            <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase text-white/60">
+              <SocialPlatformIcon platform={post.platform} size="sm" />
+              {account ? account.accountName : platformLabel(post.platform)} · {post.contentType}
+            </p>
+            <h3 className="mt-3 max-w-3xl text-2xl font-semibold leading-tight tracking-tight">{post.title}</h3>
+            <p className="mt-3 text-sm text-white/60">Posted {post.datePosted}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
+            <p className="text-xs font-semibold uppercase text-white/50">Performance signal</p>
+            <p className="mt-1 flex items-center gap-2 text-sm font-semibold"><Sparkles size={15} /> {insightForPost(post)}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {summary.map((item) => {
+          const Icon = item.icon;
+          return (
+            <article key={item.label} className={`rounded-2xl border p-4 ${item.tone}`}>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold uppercase">{item.label}</p>
+                <Icon size={17} />
+              </div>
+              <p className="mt-3 text-2xl font-semibold text-slate-950">{typeof item.value === "number" ? formatNumber(item.value) : item.value}</p>
+              <p className="mt-1 text-xs text-slate-500">{item.helper}</p>
+            </article>
+          );
+        })}
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5">
+          <div className="flex items-center gap-2">
+            <BarChart3 size={17} className="text-blue-600" />
+            <h3 className="text-sm font-semibold text-slate-950">Metric breakdown</h3>
+          </div>
+          <div className="mt-5 space-y-4">
+            {bars.map((item, index) => {
+              const Icon = item.icon;
+              const width = Math.max((item.value / maxValue) * 100, item.value ? 10 : 3);
+              return (
+                <div key={item.label}>
+                  <div className="mb-2 flex items-center justify-between text-sm">
+                    <span className="inline-flex items-center gap-2 font-semibold text-slate-700"><Icon size={15} /> {item.label}</span>
+                    <span className="font-semibold text-slate-950">{formatNumber(item.value)}</span>
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className={`analytics-bar h-full rounded-full ${item.color}`}
+                      style={{ width: `${width}%`, animationDelay: `${index * 80}ms` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+          <h3 className="text-sm font-semibold text-slate-950">Engagement mix</h3>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            {bars.slice(1).map((item) => {
+              const pct = totalEngagement ? Math.round((item.value / totalEngagement) * 100) : 0;
+              return (
+                <div key={item.label} className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-semibold uppercase text-slate-400">{item.label}</p>
+                  <p className="mt-2 text-xl font-semibold text-slate-950">{pct}%</p>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 text-sm leading-6 text-slate-500">
+            Use this view to compare attention signals. Views show exposure, while saves and shares usually indicate stronger audience intent.
+          </p>
+        </div>
+      </section>
     </div>
   );
 }
