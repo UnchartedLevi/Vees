@@ -122,6 +122,21 @@ async function completeYouTube(request: Request, code: string, stateRow: StateRo
   }
 }
 
+async function readInstagramProfile(accessToken: string) {
+  const load = async (fields: string) => {
+    const response = await fetch(`https://graph.instagram.com/me?fields=${encodeURIComponent(fields)}&access_token=${accessToken}`);
+    const payload = await response.json();
+    return { ok: response.ok, payload };
+  };
+
+  const withPicture = await load("id,username,account_type,profile_picture_url");
+  if (withPicture.ok) return withPicture.payload;
+
+  const fallback = await load("id,username,account_type");
+  if (!fallback.ok) throw new Error(fallback.payload.error?.message ?? "Could not read the Instagram profile.");
+  return fallback.payload;
+}
+
 async function completeInstagram(request: Request, rawCode: string, stateRow: StateRow, db: Db) {
   // Instagram sometimes appends a "#_" suffix to the returned code — strip it before exchange.
   const code = rawCode.replace(/#_$/, "");
@@ -153,9 +168,7 @@ async function completeInstagram(request: Request, rawCode: string, stateRow: St
   const accessToken = longLivedPayload.access_token as string;
   const expiresAt = new Date(Date.now() + Number(longLivedPayload.expires_in ?? 60 * 24 * 60 * 60) * 1000).toISOString();
 
-  const profileResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type&access_token=${accessToken}`);
-  const profilePayload = await profileResponse.json();
-  if (!profileResponse.ok) throw new Error(profilePayload.error?.message ?? "Could not read the Instagram profile.");
+  const profilePayload = await readInstagramProfile(accessToken);
 
   const accountId = String(profilePayload.id ?? igUserId);
   const values = {
@@ -171,7 +184,11 @@ async function completeInstagram(request: Request, rawCode: string, stateRow: St
     token_expires_at: expiresAt,
     scopes: ["instagram_business_basic", "instagram_business_manage_insights"],
     last_synced_at: new Date().toISOString(),
-    provider_meta: { accountType: profilePayload.account_type ?? null },
+    provider_meta: {
+      accountType: profilePayload.account_type ?? null,
+      profilePictureUrl: profilePayload.profile_picture_url ?? null,
+      thumbnailUrl: profilePayload.profile_picture_url ?? null,
+    },
   };
 
   const { data: existing } = await db.from("social_accounts").select("id").eq("workspace_id", stateRow.workspace_id).eq("platform", "Instagram").eq("provider_account_id", accountId).maybeSingle();

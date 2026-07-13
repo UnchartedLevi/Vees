@@ -42,6 +42,19 @@ const sortLabels: Record<SortMode, string> = {
 
 const metricTotal = (post: Post) => post.likes + post.comments + post.shares + post.saves;
 
+const formatDuration = (seconds?: number) => {
+  if (!seconds || seconds <= 0) return "N/A";
+  const rounded = Math.round(seconds);
+  const minutes = Math.floor(rounded / 60);
+  const remainingSeconds = rounded % 60;
+  return minutes ? `${minutes}m ${remainingSeconds}s` : `${remainingSeconds}s`;
+};
+
+const averageWatchSeconds = (post: Post) => {
+  if (!post.durationSeconds || post.retentionRate == null) return undefined;
+  return post.durationSeconds * (post.retentionRate / 100);
+};
+
 const metricBars = (post: Post) => [
   { label: "Views", value: post.impressions || post.reach, color: "bg-blue-500", icon: Eye },
   { label: "Likes", value: post.likes, color: "bg-rose-500", icon: Heart },
@@ -211,11 +224,18 @@ function PostPerformanceDetail({ post, account }: { post: Post; account?: Social
   const maxValue = Math.max(...bars.map((item) => item.value), 1);
   const totalEngagement = metricTotal(post);
   const rate = engagementRate(post);
+  const avgWatch = averageWatchSeconds(post);
   const summary = [
     { label: "Views", value: post.impressions || post.reach, helper: "Video exposure", icon: Eye, tone: "text-blue-700 bg-blue-50 border-blue-100" },
     { label: "Engagement", value: totalEngagement, helper: "Likes, comments, shares, saves", icon: Heart, tone: "text-rose-700 bg-rose-50 border-rose-100" },
     { label: "Rate", value: `${rate.toFixed(1)}%`, helper: "Engagement by reach", icon: TrendingUp, tone: "text-emerald-700 bg-emerald-50 border-emerald-100" },
-    { label: "Saves", value: post.saves, helper: "Intent signal", icon: Bookmark, tone: "text-slate-700 bg-slate-50 border-slate-200" },
+    {
+      label: "Avg. watch",
+      value: formatDuration(avgWatch),
+      helper: post.retentionRate != null ? `${post.retentionRate.toFixed(1)}% retention${post.durationSeconds ? ` of ${formatDuration(post.durationSeconds)}` : ""}` : "Requires platform retention data",
+      icon: Bookmark,
+      tone: "text-violet-700 bg-violet-50 border-violet-100",
+    },
   ];
 
   return (

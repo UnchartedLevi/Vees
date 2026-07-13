@@ -31,6 +31,7 @@ export interface SocialAccount {
   scopes?: string[];
   providerMeta?: {
     thumbnailUrl?: string | null;
+    profilePictureUrl?: string | null;
     uploadsPlaylistId?: string | null;
     accountType?: string | null;
   };
@@ -57,6 +58,7 @@ export interface Post {
   externalUrl?: string;
   postingTime?: string;
   isShort?: boolean;
+  durationSeconds?: number;
   retentionRate?: number;
 }
 

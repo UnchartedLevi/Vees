@@ -222,6 +222,21 @@ async function syncYouTube(db: Db, workspaceId: string, accountId: string, accou
   });
 }
 
+async function readInstagramProfile(accessToken: string) {
+  const load = async (fields: string) => {
+    const response = await fetch(`https://graph.instagram.com/me?fields=${encodeURIComponent(fields)}&access_token=${accessToken}`);
+    const payload = await response.json();
+    return { ok: response.ok, payload };
+  };
+
+  const withPicture = await load("id,username,account_type,media_count,profile_picture_url");
+  if (withPicture.ok) return withPicture.payload;
+
+  const fallback = await load("id,username,account_type,media_count");
+  if (!fallback.ok) throw new Error(fallback.payload.error?.message ?? "Could not read the Instagram profile before sync.");
+  return fallback.payload;
+}
+
 async function syncInstagram(db: Db, workspaceId: string, accountId: string, account: any) {
   const accessToken = await decryptInstagramToken(account.access_token_encrypted);
   if (!accessToken) throw new Error("Instagram account is missing an access token.");
@@ -240,9 +255,19 @@ async function syncInstagram(db: Db, workspaceId: string, accountId: string, acc
 
   const currentToken = (await decryptInstagramToken((await db.from("social_accounts").select("access_token_encrypted").eq("id", accountId).single()).data?.access_token_encrypted)) ?? accessToken;
 
-  const profileResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type,media_count&access_token=${currentToken}`);
-  const profilePayload = await profileResponse.json();
-  if (!profileResponse.ok) throw new Error(profilePayload.error?.message ?? "Could not read the Instagram profile before sync.");
+  const profilePayload = await readInstagramProfile(currentToken);
+  if (profilePayload.profile_picture_url) {
+    await db.from("social_accounts").update({
+      account_name: profilePayload.username ?? account.account_name,
+      account_handle: profilePayload.username ? `@${profilePayload.username}` : account.account_handle,
+      provider_meta: {
+        ...(account.provider_meta ?? {}),
+        accountType: profilePayload.account_type ?? account.provider_meta?.accountType ?? null,
+        profilePictureUrl: profilePayload.profile_picture_url,
+        thumbnailUrl: profilePayload.profile_picture_url,
+      },
+    }).eq("id", accountId);
+  }
 
   const mediaFields = "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count";
   const media: any[] = [];
