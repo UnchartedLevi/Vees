@@ -4,7 +4,7 @@ import { platforms } from "../data/options";
 export const platformLabel = (platform: SocialPlatform) => platform === "YouTube Shorts" ? "YouTube" : platform;
 
 export function connectedPlatforms(accounts: SocialAccount[]) {
-  return accounts.filter((account) => account.connectionStatus === "connected").map((account) => account.platform);
+  return [...new Set(accounts.filter((account) => account.connectionStatus === "connected").map((account) => account.platform))];
 }
 
 export function orderedPlatforms(accounts: SocialAccount[]) {

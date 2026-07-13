@@ -21,10 +21,11 @@ export const tiktokConnector: SocialConnector = {
     await this.syncPosts(account);
   },
   async syncPosts(account) {
-    const { error } = await requireSupabase().functions.invoke("sync-social-account", {
+    const { data, error } = await requireSupabase().functions.invoke<{ syncedPosts: number }>("sync-social-account", {
       body: { workspaceId: account.workspaceId, accountId: account.id },
     });
     if (error) throw error;
+    return data ?? undefined;
   },
   async syncAnalytics(account) {
     await this.syncPosts(account);

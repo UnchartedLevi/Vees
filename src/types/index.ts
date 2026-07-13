@@ -39,6 +39,7 @@ export interface AnalyticsSnapshot { id: string; workspaceId: string; socialAcco
 
 export interface Post {
   id: string;
+  socialAccountId?: string;
   title: string;
   platform: SocialPlatform;
   contentType: ContentType;

@@ -33,6 +33,15 @@ export async function createSocialAccount(workspaceId: string, input: { platform
   return mapAccount(concurrent);
 }
 
+export async function disconnectSocialAccount(workspaceId: string, accountId: string) {
+  const { error } = await requireSupabase()
+    .from("social_accounts")
+    .update({ connection_status: "disconnected" })
+    .eq("workspace_id", workspaceId)
+    .eq("id", accountId);
+  if (error) throw error;
+}
+
 export async function getSnapshots(workspaceId: string) {
   const { data, error } = await requireSupabase().from("analytics_snapshots").select("*").eq("workspace_id", workspaceId);
   if (error) throw error;

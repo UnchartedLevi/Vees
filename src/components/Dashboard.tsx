@@ -1,6 +1,6 @@
 import { ArrowUpRight, CalendarCheck, CheckCircle2, Eye, Heart, Layers3, Lightbulb, Link2, PencilLine, Radio, Send, Sparkles, TrendingUp } from "lucide-react";
 import type { AppDataProps } from "../App";
-import type { SocialPlatform } from "../types";
+import type { SocialAccount, SocialPlatform } from "../types";
 import { engagementTotal, formatNumber } from "../utils/analytics";
 import { accountForPlatform, orderedPlatforms, platformLabel } from "../utils/channels";
 import {
@@ -29,7 +29,10 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
     .sort((a, b) => b.rate - a.rate);
   const connected = socialAccounts.filter((account) => account.connectionStatus === "connected");
   const availablePlatforms = orderedPlatforms(socialAccounts).filter((platform) => !accountForPlatform(socialAccounts, platform));
-  const platformPostCount = (platform: SocialPlatform) => posts.filter((post) => post.platform === platform).length;
+  const accountPosts = (account: SocialAccount) => {
+    const directMatches = posts.filter((post) => post.socialAccountId === account.id);
+    return directMatches.length ? directMatches : posts.filter((post) => !post.socialAccountId && post.platform === account.platform);
+  };
   const platformScheduledCount = (platform: SocialPlatform) => scheduledPosts.filter((post) => post.platform === platform).length;
 
   return (
@@ -76,7 +79,7 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
               </div>
               <div className="mt-5 grid grid-cols-2 gap-2 text-sm">
                 <div className="rounded-xl bg-slate-50 p-3">
-                  <p className="text-lg font-semibold text-slate-950">{platformPostCount(account.platform)}</p>
+                  <p className="text-lg font-semibold text-slate-950">{accountPosts(account).length}</p>
                   <p className="text-xs text-slate-500">tracked posts</p>
                 </div>
                 <div className="rounded-xl bg-slate-50 p-3">

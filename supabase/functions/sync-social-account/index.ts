@@ -238,11 +238,25 @@ async function syncInstagram(db: Db, workspaceId: string, accountId: string, acc
 
   const currentToken = (await decryptInstagramToken((await db.from("social_accounts").select("access_token_encrypted").eq("id", accountId).single()).data?.access_token_encrypted)) ?? accessToken;
 
+  const profileResponse = await fetch(`https://graph.instagram.com/me?fields=id,username,account_type,media_count&access_token=${currentToken}`);
+  const profilePayload = await profileResponse.json();
+  if (!profileResponse.ok) throw new Error(profilePayload.error?.message ?? "Could not read the Instagram profile before sync.");
+
   const mediaFields = "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count";
-  const mediaResponse = await fetch(`https://graph.instagram.com/me/media?fields=${mediaFields}&limit=20&access_token=${currentToken}`);
-  const mediaPayload = await mediaResponse.json();
-  if (!mediaResponse.ok) throw new Error(mediaPayload.error?.message ?? "Instagram media sync failed.");
-  const media: any[] = mediaPayload?.data ?? [];
+  const media: any[] = [];
+  let mediaUrl: string | undefined = `https://graph.instagram.com/me/media?fields=${encodeURIComponent(mediaFields)}&limit=100&access_token=${currentToken}`;
+
+  for (let page = 0; mediaUrl && page < 10; page += 1) {
+    const mediaResponse = await fetch(mediaUrl);
+    const mediaPayload = await mediaResponse.json();
+    if (!mediaResponse.ok) throw new Error(mediaPayload.error?.message ?? "Instagram media sync failed.");
+    media.push(...(mediaPayload?.data ?? []));
+    mediaUrl = mediaPayload?.paging?.next;
+  }
+
+  if (!media.length && Number(profilePayload.media_count ?? 0) > 0) {
+    throw new Error(`Instagram returned 0 media for @${profilePayload.username ?? account.account_handle}, but the profile reports ${profilePayload.media_count} posts. Reconnect Instagram and approve media access again.`);
+  }
 
   // Reach, saved, and shares come from a separate Insights call per media item and are only
   // fetched on paid plans — see src/utils/planLimits.ts. Free plans get like/comment counts,

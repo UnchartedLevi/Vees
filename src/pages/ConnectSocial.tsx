@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle2, CircleDashed, Clock3, Loader2, Link2, Plug, RefreshCw, ShieldCheck, Sparkles, Zap } from "lucide-react";
+import { AlertCircle, CheckCircle2, CircleDashed, Clock3, Loader2, Link2, LogOut, Plug, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useData } from "../context/DataContext";
-import { demoConnector } from "../integrations/social/demoConnector";
 import { metaConnector } from "../integrations/social/metaConnector";
 import { youtubeConnector } from "../integrations/social/youtubeConnector";
+import { disconnectSocialAccount } from "../services/socialAccountService";
 import type { ImportMode, SocialPlatform } from "../types";
 import PageHeader from "../components/PageHeader";
 import SocialPlatformIcon from "../components/SocialPlatformIcon";
@@ -141,13 +141,10 @@ export default function ConnectSocial() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const [platform, setPlatform] = useState<SocialPlatform>("Instagram");
-  const [name, setName] = useState("Demo account");
-  const [handle, setHandle] = useState("@demo");
   const [mode, setMode] = useState<ImportMode>("existing_posts");
-  const [demoBusy, setDemoBusy] = useState(false);
   const [connectingProvider, setConnectingProvider] = useState<SocialPlatform | "">("");
   const [syncingId, setSyncingId] = useState("");
+  const [disconnectingId, setDisconnectingId] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
@@ -165,30 +162,6 @@ export default function ConnectSocial() {
     if (status === "error") setError(params.get("message") ?? `${label} connection failed.`);
     navigate("/app/connect", { replace: true });
   }, [location.search, navigate, refresh]);
-
-  const connectDemo = async () => {
-    if (!name.trim() || !handle.trim()) {
-      setError("Add an account name and handle before connecting.");
-      return;
-    }
-    setDemoBusy(true);
-    setMessage("");
-    setError("");
-    try {
-      await demoConnector.connect(workspace.id, {
-        platform,
-        accountName: name.trim(),
-        accountHandle: handle.trim(),
-        importMode: mode,
-      });
-      await refresh();
-      setMessage("Demo account connected. Your workspace data is ready.");
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Connection failed");
-    } finally {
-      setDemoBusy(false);
-    }
-  };
 
   const connectorFor = (providerName: SocialPlatform) =>
     providerName === "YouTube Shorts" ? youtubeConnector
@@ -218,13 +191,35 @@ export default function ConnectSocial() {
     setMessage("");
     setError("");
     try {
-      await connector.syncPosts(account);
+      const result = await connector.syncPosts(account);
       await refresh();
-      setMessage(`${labelFor(account.platform)} sync completed. Analytics and posts have been refreshed.`);
+      const syncedPosts = result?.syncedPosts;
+      setMessage(
+        typeof syncedPosts === "number"
+          ? `${labelFor(account.platform)} sync completed. ${syncedPosts} existing post${syncedPosts === 1 ? "" : "s"} imported or refreshed.`
+          : `${labelFor(account.platform)} sync completed. Analytics and posts have been refreshed.`,
+      );
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : `${labelFor(account.platform)} sync failed`);
     } finally {
       setSyncingId("");
+    }
+  };
+
+  const disconnectAccount = async (accountId: string) => {
+    const account = socialAccounts.find((entry) => entry.id === accountId);
+    if (!account) return;
+    setDisconnectingId(accountId);
+    setMessage("");
+    setError("");
+    try {
+      await disconnectSocialAccount(workspace.id, accountId);
+      await refresh();
+      setMessage(`${labelFor(account.platform)} disconnected. Historical posts stay available, but the account is no longer active.`);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : `${labelFor(account.platform)} disconnect failed`);
+    } finally {
+      setDisconnectingId("");
     }
   };
 
@@ -291,20 +286,21 @@ export default function ConnectSocial() {
         <div className="grid gap-3 lg:grid-cols-3">
           {providers.map((provider) => {
             const isLive = provider.status === "live";
-            const connectedAccount = socialAccounts.find((account) => account.platform === provider.name && account.connectionStatus === "connected");
+            const connectedAccounts = socialAccounts.filter((account) => account.platform === provider.name && account.connectionStatus === "connected");
+            const hasConnectedAccounts = connectedAccounts.length > 0;
             return (
               <article
                 key={provider.name}
                 className={`flex min-h-[260px] flex-col rounded-lg border bg-white p-4 shadow-sm transition hover:shadow-md ${
-                  connectedAccount ? "border-emerald-200 ring-1 ring-emerald-100" : "border-slate-200 hover:border-slate-300"
+                  hasConnectedAccounts ? "border-emerald-200 ring-1 ring-emerald-100" : "border-slate-200 hover:border-slate-300"
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  {connectedAccount ? <ConnectedAvatar account={connectedAccount} /> : <PlatformIcon name={provider.name} />}
-                  {connectedAccount ? (
+                  {hasConnectedAccounts ? <ConnectedAvatar account={connectedAccounts[0]} /> : <PlatformIcon name={provider.name} />}
+                  {hasConnectedAccounts ? (
                     <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-700">
                       <CheckCircle2 size={12} />
-                      Connected
+                      {connectedAccounts.length} connected
                     </span>
                   ) : (
                     <StatusBadge status={provider.status} />
@@ -316,13 +312,17 @@ export default function ConnectSocial() {
                     <SocialPlatformIcon platform={provider.name} size="sm" />
                     {provider.displayName}
                   </h3>
-                  {connectedAccount ? (
-                    <div className="mt-2 rounded-lg border border-emerald-100 bg-emerald-50/70 p-3">
-                      <p className="truncate text-sm font-semibold text-slate-950">{connectedAccount.accountName}</p>
-                      <p className="mt-0.5 truncate text-xs text-emerald-800">{connectedAccount.accountHandle}</p>
-                      <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.12em] text-emerald-700">
-                        {formatLastSynced(connectedAccount.lastSyncedAt)}
-                      </p>
+                  {hasConnectedAccounts ? (
+                    <div className="mt-2 space-y-2">
+                      {connectedAccounts.map((account) => (
+                        <div key={account.id} className="rounded-lg border border-emerald-100 bg-emerald-50/70 p-3">
+                          <p className="truncate text-sm font-semibold text-slate-950">{account.accountName}</p>
+                          <p className="mt-0.5 truncate text-xs text-emerald-800">{account.accountHandle}</p>
+                          <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.12em] text-emerald-700">
+                            {formatLastSynced(account.lastSyncedAt)}
+                          </p>
+                        </div>
+                      ))}
                     </div>
                   ) : (
                     <p className="mt-2 text-sm leading-6 text-slate-500">{provider.note}</p>
@@ -336,23 +336,35 @@ export default function ConnectSocial() {
                   </div>
                 </div>
 
-                {connectedAccount ? (
-                  <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                    <button
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-white px-3 py-2.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:text-emerald-400"
-                      disabled={syncingId === connectedAccount.id}
-                      onClick={() => void syncProvider(connectedAccount.id)}
-                    >
-                      <RefreshCw size={15} className={syncingId === connectedAccount.id ? "animate-spin" : ""} />
-                      {syncingId === connectedAccount.id ? "Syncing..." : "Sync"}
-                    </button>
+                {hasConnectedAccounts ? (
+                  <div className="mt-5 grid gap-2">
+                    {connectedAccounts.map((account) => (
+                      <div key={account.id} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                        <button
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-white px-3 py-2.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:text-emerald-400"
+                          disabled={syncingId === account.id}
+                          onClick={() => void syncProvider(account.id)}
+                        >
+                          <RefreshCw size={15} className={syncingId === account.id ? "animate-spin" : ""} />
+                          {syncingId === account.id ? "Syncing..." : "Sync"}
+                        </button>
+                        <button
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-rose-200 bg-white px-3 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:text-rose-300"
+                          disabled={disconnectingId === account.id}
+                          onClick={() => void disconnectAccount(account.id)}
+                        >
+                          <LogOut size={15} />
+                          {disconnectingId === account.id ? "Disconnecting..." : "Disconnect"}
+                        </button>
+                      </div>
+                    ))}
                     <button
                       className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
                       disabled={Boolean(connectingProvider)}
                       onClick={() => void connectProvider(provider.name)}
                     >
                       <Plug size={15} />
-                      Reconnect
+                      Connect another {provider.displayName}
                     </button>
                   </div>
                 ) : isLive ? (
@@ -376,89 +388,32 @@ export default function ConnectSocial() {
         </div>
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="mb-5 flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700">
-            <Zap size={17} />
-          </span>
-          <div>
-            <h3 className="text-[15px] font-semibold text-slate-950">Demo / manual connector</h3>
-            <p className="text-sm leading-6 text-slate-500">Simulate any channel while provider reviews are still in progress.</p>
-          </div>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="space-y-4">
-            <label>
-              <span className="label">Platform to simulate</span>
-              <select className="input" value={platform} onChange={(event) => setPlatform(event.target.value as SocialPlatform)}>
-                {providers.map((provider) => (
-                  <option key={provider.name} value={provider.name}>{provider.displayName}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span className="label">Account name</span>
-              <input className="input" value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Vees Marketing" />
-            </label>
-            <label>
-              <span className="label">Handle</span>
-              <input className="input" value={handle} onChange={(event) => setHandle(event.target.value)} placeholder="@handle" />
-            </label>
-          </div>
-
-          <div>
-            <p className="label mb-3">Import mode</p>
-            <div className="space-y-2">
-              {importModes.map(([value, title, copy]) => (
-                <label
-                  key={value}
-                  className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3.5 transition ${
-                    mode === value ? "border-slate-950 bg-slate-50" : "border-slate-200 bg-white hover:bg-slate-50"
-                  }`}
-                >
-                  <input type="radio" className="mt-1 accent-slate-950" checked={mode === value} onChange={() => setMode(value)} />
-                  <span>
-                    <span className="block text-sm font-semibold text-slate-950">{title}</span>
-                    <span className="mt-1 block text-xs leading-5 text-slate-500">{copy}</span>
-                  </span>
-                </label>
-              ))}
-            </div>
-
-            <button
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
-              disabled={demoBusy}
-              onClick={() => void connectDemo()}
-            >
-              <Plug size={15} />
-              {demoBusy ? "Connecting..." : "Connect demo account"}
-            </button>
-          </div>
-        </div>
-
-        {message && (
-          <p className="mt-5 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3.5 text-sm leading-6 text-emerald-800">
-            <CheckCircle2 className="mt-0.5 shrink-0" size={16} />
-            {message}
-          </p>
-        )}
-        {error && (
-          <p className="mt-5 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3.5 text-sm leading-6 text-rose-700">
-            <AlertCircle className="mt-0.5 shrink-0" size={16} />
-            {error}
-          </p>
-        )}
-      </section>
+      {(message || error) && (
+        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          {message && (
+            <p className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3.5 text-sm leading-6 text-emerald-800">
+              <CheckCircle2 className="mt-0.5 shrink-0" size={16} />
+              {message}
+            </p>
+          )}
+          {error && (
+            <p className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3.5 text-sm leading-6 text-rose-700">
+              <AlertCircle className="mt-0.5 shrink-0" size={16} />
+              {error}
+            </p>
+          )}
+        </section>
+      )}
 
       {socialAccounts.length > 0 && (
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <h3 className="mb-4 text-[15px] font-semibold text-slate-950">Connected accounts</h3>
+          <h3 className="mb-4 text-[15px] font-semibold text-slate-950">Account history</h3>
           <div className="space-y-2">
             {socialAccounts.map((account) => {
               const canSync = Boolean(connectorFor(account.platform));
+              const isConnected = account.connectionStatus === "connected";
               return (
-                <div key={account.id} className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div key={account.id} className={`flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between ${isConnected ? "border-slate-200 bg-slate-50" : "border-slate-200 bg-white opacity-75"}`}>
                   <div className="flex min-w-0 items-center gap-3">
                     <ConnectedAvatar account={account} />
                     <div className="min-w-0">
@@ -471,28 +426,54 @@ export default function ConnectSocial() {
                       <p className="truncate text-xs leading-5 text-slate-500">
                         {account.accountHandle} - {account.importMode}
                       </p>
-                      {account.connectionStatus === "connected" && (
+                      {isConnected ? (
                         <p className="mt-0.5 inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700">
                           <CheckCircle2 size={12} />
                           Connected
                         </p>
+                      ) : (
+                        <p className="mt-0.5 inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">
+                          <CircleDashed size={12} />
+                          Disconnected
+                        </p>
                       )}
                     </div>
                   </div>
-                  {canSync ? (
-                    <button
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-400 sm:w-auto"
-                      disabled={syncingId === account.id}
-                      onClick={() => void syncProvider(account.id)}
-                    >
-                      <RefreshCw size={14} className={syncingId === account.id ? "animate-spin" : ""} />
-                      {syncingId === account.id ? "Syncing..." : `Sync ${labelFor(account.platform)}`}
-                    </button>
-                  ) : (
-                    <span className="inline-flex w-full items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-400 sm:w-auto">
-                      Sync paused
-                    </span>
-                  )}
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    {canSync && isConnected ? (
+                      <button
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-400 sm:w-auto"
+                        disabled={syncingId === account.id}
+                        onClick={() => void syncProvider(account.id)}
+                      >
+                        <RefreshCw size={14} className={syncingId === account.id ? "animate-spin" : ""} />
+                        {syncingId === account.id ? "Syncing..." : `Sync ${labelFor(account.platform)}`}
+                      </button>
+                    ) : (
+                      <span className="inline-flex w-full items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-400 sm:w-auto">
+                        {isConnected ? "Sync paused" : "Inactive"}
+                      </span>
+                    )}
+                    {isConnected ? (
+                      <button
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:text-rose-300 sm:w-auto"
+                        disabled={disconnectingId === account.id}
+                        onClick={() => void disconnectAccount(account.id)}
+                      >
+                        <LogOut size={14} />
+                        {disconnectingId === account.id ? "Disconnecting..." : "Disconnect"}
+                      </button>
+                    ) : canSync ? (
+                      <button
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto"
+                        disabled={Boolean(connectingProvider)}
+                        onClick={() => void connectProvider(account.platform)}
+                      >
+                        <Plug size={14} />
+                        Reconnect
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               );
             })}

@@ -26,11 +26,12 @@ export const metaConnector: SocialConnector = {
   },
   async syncPosts(account) {
     const db = requireSupabase();
-    const { error } = await db.functions.invoke("sync-social-account", {
+    const { data, error } = await db.functions.invoke<{ syncedPosts: number }>("sync-social-account", {
       body: { workspaceId: account.workspaceId, accountId: account.id },
       headers: await authHeaders(db),
     });
     if (error) throw new Error(await readableFunctionError(error, "Instagram sync failed."));
+    return data ?? undefined;
   },
   async syncAnalytics(account) {
     await this.syncPosts(account);
