@@ -16,19 +16,19 @@ export default function EmptyState({ icon: Icon, title, description, action, cla
     >
       <span
         className="flex h-14 w-14 items-center justify-center rounded-[18px]"
-        style={{ background: "#F5F5F7", color: "#86868B" }}
+        style={{ background: "rgba(159, 131, 255, 0.12)", color: "var(--vees-violet-2)" }}
       >
         <Icon size={22} />
       </span>
       <p
         className="mt-4 text-[17px] font-semibold"
-        style={{ color: "#1D1D1F", letterSpacing: "-0.025em" }}
+        style={{ color: "var(--vees-text)", letterSpacing: 0 }}
       >
         {title}
       </p>
       <p
         className="mt-2 max-w-sm text-[14px] leading-relaxed"
-        style={{ color: "#6E6E73" }}
+        style={{ color: "var(--vees-muted)" }}
       >
         {description}
       </p>

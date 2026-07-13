@@ -65,7 +65,7 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
             <article key={account.id} className="card card-hover p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">
+                  <p className="flex items-center gap-2 text-[11px] font-bold uppercase text-emerald-700">
                     <SocialPlatformIcon platform={account.platform} size="sm" />
                     {platformLabel(account.platform)}
                   </p>
@@ -146,10 +146,7 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
               <h2 className="section-title">Engagement trend</h2>
               <p className="section-copy">Recent content performance across your active channels.</p>
             </div>
-            <span
-              className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
-              style={{ background: "rgba(52,199,89,0.1)", color: "#1A7A40", letterSpacing: "0.04em" }}
-            >
+            <span className="rounded-full px-2.5 py-1 text-[10px] font-semibold" style={{ background: "rgba(159,131,255,0.13)", color: "var(--vees-violet-2)", letterSpacing: 0 }}>
               Live
             </span>
           </div>
@@ -157,18 +154,18 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
           <div className="mt-8 flex h-44 items-end gap-1.5 sm:gap-2">
             {engagementTrend.map((item) => (
               <div key={item.label} className="flex h-full flex-1 flex-col justify-end gap-2">
-                <div className="relative flex flex-1 items-end rounded-lg" style={{ background: "#F5F5F7" }}>
+                <div className="relative flex flex-1 items-end rounded-lg" style={{ background: "rgba(159,131,255,0.10)" }}>
                   <div
                     className="w-full rounded-lg transition-all duration-500"
                     style={{
                       height: `${item.value}%`,
-                      background: "linear-gradient(180deg, #0071E3 0%, #005BB5 100%)",
+                      background: "linear-gradient(180deg, var(--vees-violet) 0%, var(--vees-violet-2) 100%)",
                     }}
                   />
                 </div>
                 <span
                   className="text-center text-[9px] sm:text-[10px]"
-                  style={{ color: "#86868B" }}
+                  style={{ color: "var(--vees-muted)" }}
                 >
                   {item.label}
                 </span>
@@ -185,22 +182,22 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
             {platformTotals.map(({ platform, rate }, i) => (
               <div key={platform}>
                 <div className="mb-1.5 flex justify-between text-[13px]">
-                  <span className="inline-flex items-center gap-2 font-medium" style={{ color: "#1D1D1F" }}>
+                  <span className="inline-flex items-center gap-2 font-medium" style={{ color: "var(--vees-text)" }}>
                     <SocialPlatformIcon platform={platform} size="sm" />
                     {platformLabel(platform)}
                   </span>
-                  <span style={{ color: "#86868B" }}>{rate.toFixed(1)}%</span>
+                  <span style={{ color: "var(--vees-muted)" }}>{rate.toFixed(1)}%</span>
                 </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#F5F5F7" }}>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(159,131,255,0.10)" }}>
                   <div
                     className="h-full rounded-full transition-all duration-700"
                     style={{
                       width: `${Math.min(rate * 8, 100)}%`,
                       background: i === 0
-                        ? "#0071E3"
+                        ? "var(--vees-violet-2)"
                         : i === 1
-                        ? "#34C759"
-                        : "#86868B",
+                        ? "var(--vees-pink-2)"
+                        : "var(--vees-muted)",
                     }}
                   />
                 </div>
@@ -218,7 +215,7 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
           <section className="card overflow-hidden">
             <div
               className="flex items-center justify-between px-6 py-5"
-              style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}
+              style={{ borderBottom: "1px solid var(--vees-line)" }}
             >
               <div>
                 <h2 className="section-title">Top-performing posts</h2>
@@ -227,8 +224,8 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
               <button
                 onClick={() => onNavigate?.("Analytics")}
                 className="flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-150 cursor-pointer"
-                style={{ color: "#6E6E73" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "#F5F5F7"; }}
+                style={{ color: "var(--vees-muted)" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(159,131,255,0.10)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
               >
                 <ArrowUpRight size={16} />
@@ -239,22 +236,22 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
               <div
                 key={post.id}
                 className="flex items-center gap-4 px-6 py-4 transition-colors duration-150 cursor-default"
-                style={{ borderBottom: "1px solid rgba(0,0,0,0.05)" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(0,0,0,0.02)"; }}
+                style={{ borderBottom: "1px solid var(--vees-line)" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(159,131,255,0.06)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[14px] font-medium" style={{ color: "#1D1D1F" }}>
+                  <p className="truncate text-[14px] font-medium" style={{ color: "var(--vees-text)" }}>
                     {post.title}
                   </p>
-                  <p className="mt-0.5 text-[12px]" style={{ color: "#86868B" }}>
+                  <p className="mt-0.5 text-[12px]" style={{ color: "var(--vees-muted)" }}>
                     <span className="inline-flex items-center gap-1.5">
                       <SocialPlatformIcon platform={post.platform} size="sm" />
-                      {platformLabel(post.platform)} · {post.contentType}
+                      {platformLabel(post.platform)} / {post.contentType}
                     </span>
                   </p>
                 </div>
-                <p className="text-[15px] font-semibold" style={{ color: "#1D1D1F" }}>
+                <p className="text-[15px] font-semibold" style={{ color: "var(--vees-text)" }}>
                   {formatNumber(engagementTotal(post))}
                 </p>
               </div>
@@ -271,7 +268,7 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
         {/* Smart recommendations */}
         <section className="card p-6">
           <div className="flex items-center gap-2 mb-1">
-            <Sparkles size={16} style={{ color: "#0071E3" }} />
+            <Sparkles size={16} style={{ color: "var(--vees-violet-2)" }} />
             <h2 className="section-title">Smart recommendations</h2>
           </div>
           <p className="section-copy">Rule-based next steps from your current content data.</p>
@@ -281,12 +278,12 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
               <div
                 key={item.id}
                 className="rounded-[14px] p-4"
-                style={{ background: "#F5F5F7", border: "1px solid rgba(0,0,0,0.05)" }}
+                style={{ background: "linear-gradient(135deg, rgba(159,131,255,0.10), rgba(246,166,213,0.08))", border: "1px solid rgba(159,131,255,0.14)" }}
               >
-                <p className="text-[14px] font-medium" style={{ color: "#1D1D1F" }}>
+                <p className="text-[14px] font-medium" style={{ color: "var(--vees-text)" }}>
                   {item.title}
                 </p>
-                <p className="mt-1 text-[12px] leading-relaxed" style={{ color: "#86868B" }}>
+                <p className="mt-1 text-[12px] leading-relaxed" style={{ color: "var(--vees-muted)" }}>
                   {item.detail}
                 </p>
               </div>

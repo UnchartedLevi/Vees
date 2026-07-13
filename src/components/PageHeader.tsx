@@ -15,20 +15,20 @@ export default function PageHeader({ eyebrow, title, description, action }: Prop
         {eyebrow && (
           <p
             className="mb-2 text-[11px] font-bold uppercase"
-            style={{ color: "#86868B", letterSpacing: "0.12em" }}
+            style={{ color: "var(--vees-violet-2)", letterSpacing: 0 }}
           >
             {eyebrow}
           </p>
         )}
         <h2
           className="text-[26px] font-semibold sm:text-[30px]"
-          style={{ color: "#1D1D1F", letterSpacing: "-0.035em", lineHeight: 1.1 }}
+          style={{ color: "var(--vees-text)", letterSpacing: 0, lineHeight: 1.1 }}
         >
           {title}
         </h2>
         <p
           className="mt-2 max-w-2xl text-[15px] leading-relaxed"
-          style={{ color: "#6E6E73" }}
+          style={{ color: "var(--vees-muted)" }}
         >
           {description}
         </p>

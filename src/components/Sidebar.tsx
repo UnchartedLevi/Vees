@@ -44,25 +44,22 @@ export default function Sidebar({ page, brandName, scheduledCount, onNavigate, o
         className={`fixed inset-y-0 left-0 z-40 flex w-[260px] flex-col bg-white/90 backdrop-blur-2xl transition-transform duration-300 lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
-        style={{ borderRight: "1px solid rgba(0,0,0,0.07)" }}
+        style={{ borderRight: "1px solid var(--vees-line)" }}
       >
         {/* Logo */}
         <div className="flex items-center justify-between px-5 pb-5 pt-6">
           <div className="flex items-center gap-2.5">
             <div
-              className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white"
-              style={{ background: "linear-gradient(145deg, #1D1D1F 0%, #3A3A3C 100%)" }}
+              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-[12px]"
+              style={{ boxShadow: "0 10px 22px rgba(48,47,87,0.18)" }}
             >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 2L14 5.5V10.5L8 14L2 10.5V5.5L8 2Z" fill="white" fillOpacity="0.9"/>
-                <path d="M8 5L11 6.75V10.25L8 12L5 10.25V6.75L8 5Z" fill="white" fillOpacity="0.4"/>
-              </svg>
+              <img src="/vees-icon.svg" alt="" className="h-full w-full" />
             </div>
             <div>
-              <p className="text-[15px] font-semibold tracking-tight" style={{ color: "#1D1D1F", letterSpacing: "-0.03em" }}>
+              <p className="text-[15px] font-semibold tracking-tight" style={{ color: "var(--vees-text)", letterSpacing: 0 }}>
                 Vees
               </p>
-              <p className="max-w-[140px] truncate text-[11px]" style={{ color: "#86868B" }}>
+              <p className="max-w-[140px] truncate text-[11px]" style={{ color: "var(--vees-muted)" }}>
                 {brandName}
               </p>
             </div>
@@ -70,7 +67,7 @@ export default function Sidebar({ page, brandName, scheduledCount, onNavigate, o
           <button
             aria-label="Close menu"
             className="flex h-7 w-7 items-center justify-center rounded-full transition lg:hidden"
-            style={{ background: "rgba(0,0,0,0.05)", color: "#6E6E73" }}
+            style={{ background: "rgba(48,47,87,0.08)", color: "var(--vees-muted)" }}
             onClick={onClose}
           >
             <X size={14} />
@@ -90,17 +87,17 @@ export default function Sidebar({ page, brandName, scheduledCount, onNavigate, o
                 style={{
                   fontSize: "0.9375rem",
                   fontWeight: active ? 600 : 400,
-                  backgroundColor: active ? "rgba(0, 113, 227, 0.10)" : primary ? "rgba(0,0,0,0.025)" : "transparent",
-                  color: active ? "#0071E3" : primary ? "#1D1D1F" : "#6E6E73",
+                  backgroundColor: active ? "rgba(159, 131, 255, 0.16)" : primary ? "rgba(48,47,87,0.04)" : "transparent",
+                  color: active ? "var(--vees-violet-2)" : primary ? "var(--vees-text)" : "var(--vees-muted)",
                 }}
                 onMouseEnter={(e) => {
-                  if (!active) (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(0,0,0,0.04)";
+                  if (!active) (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(48,47,87,0.06)";
                 }}
                 onMouseLeave={(e) => {
-                  if (!active) (e.currentTarget as HTMLButtonElement).style.backgroundColor = primary ? "rgba(0,0,0,0.025)" : "transparent";
+                  if (!active) (e.currentTarget as HTMLButtonElement).style.backgroundColor = primary ? "rgba(48,47,87,0.04)" : "transparent";
                 }}
               >
-                <Icon size={17} className={active ? "text-[#0071E3]" : primary ? "text-[#1D1D1F]" : "text-[#86868B]"} />
+                <Icon size={17} style={{ color: active ? "var(--vees-violet-2)" : primary ? "var(--vees-text)" : "var(--vees-muted)" }} />
                 {label}
               </button>
             );
@@ -108,16 +105,16 @@ export default function Sidebar({ page, brandName, scheduledCount, onNavigate, o
         </nav>
 
         {/* Footer */}
-        <div className="px-4 pb-6 pt-4 space-y-3" style={{ borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+        <div className="px-4 pb-6 pt-4 space-y-3" style={{ borderTop: "1px solid var(--vees-line)" }}>
           {/* Publishing pulse */}
-          <div className="rounded-[14px] border border-slate-200 bg-slate-50 p-3.5">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: "#86868B" }}>
+          <div className="rounded-[14px] p-3.5" style={{ background: "linear-gradient(135deg, rgba(159,131,255,0.12), rgba(246,166,213,0.10))", border: "1px solid rgba(159,131,255,0.18)" }}>
+            <p className="text-[10px] font-semibold uppercase" style={{ color: "var(--vees-muted)", letterSpacing: 0 }}>
               Publishing pulse
             </p>
-            <p className="mt-1.5 text-[15px] font-semibold tracking-tight" style={{ color: "#1D1D1F", letterSpacing: "-0.02em" }}>
+            <p className="mt-1.5 text-[15px] font-semibold tracking-tight" style={{ color: "var(--vees-text)", letterSpacing: 0 }}>
               {scheduledCount} posts scheduled
             </p>
-            <p className="mt-1 text-[12px] leading-relaxed" style={{ color: "#86868B" }}>
+            <p className="mt-1 text-[12px] leading-relaxed" style={{ color: "var(--vees-muted)" }}>
               A focused week leaves room to learn from your audience.
             </p>
           </div>
@@ -125,9 +122,9 @@ export default function Sidebar({ page, brandName, scheduledCount, onNavigate, o
           <button
             onClick={() => { onLogout(); onClose(); }}
             className="flex w-full items-center gap-2 px-2 py-1 transition-colors duration-150 cursor-pointer"
-            style={{ fontSize: "0.8125rem", fontWeight: 500, color: "#86868B", borderRadius: "8px" }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#1D1D1F"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#86868B"; }}
+            style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--vees-muted)", borderRadius: "8px" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--vees-text)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--vees-muted)"; }}
           >
             <LogOut size={13} />
             Sign out

@@ -78,7 +78,7 @@ export default function AuthPage({ mode }: { mode: "login" | "signup" | "forgot"
   return (
     <main
       className="relative flex min-h-screen flex-col items-center justify-center p-5 overflow-hidden"
-      style={{ backgroundColor: "#F5F5F7" }}
+      style={{ backgroundColor: "var(--vees-mist)" }}
     >
       {/* ReactBits DotGrid background */}
       <div className="absolute inset-0 z-0" aria-hidden="true">
@@ -86,8 +86,8 @@ export default function AuthPage({ mode }: { mode: "login" | "signup" | "forgot"
           className="opacity-80"
           dotSize={4}
           gap={28}
-          baseColor="#CBD5E1"
-          activeColor="#0071E3"
+          baseColor="#DED7FF"
+          activeColor="#9F83FF"
           proximity={135}
           speedTrigger={90}
           shockRadius={210}
@@ -101,7 +101,7 @@ export default function AuthPage({ mode }: { mode: "login" | "signup" | "forgot"
         className="pointer-events-none absolute inset-0 z-[1]"
         style={{
           background:
-            "radial-gradient(circle at 50% 42%, rgba(255,255,255,0.34) 0%, rgba(245,245,247,0.78) 44%, rgba(245,245,247,0.94) 100%), linear-gradient(135deg, rgba(0,113,227,0.08), rgba(52,199,89,0.06) 48%, rgba(175,82,222,0.08))",
+            "radial-gradient(circle at 50% 42%, rgba(255,255,255,0.38) 0%, rgba(247,244,255,0.78) 44%, rgba(247,244,255,0.94) 100%), linear-gradient(135deg, rgba(159,131,255,0.16), rgba(246,166,213,0.10) 52%, rgba(25,24,45,0.08))",
         }}
         aria-hidden="true"
       />
@@ -111,17 +111,14 @@ export default function AuthPage({ mode }: { mode: "login" | "signup" | "forgot"
       {/* Wordmark */}
       <div className="mb-8 flex items-center gap-2">
         <div
-          className="flex h-9 w-9 items-center justify-center rounded-[11px] text-white"
-          style={{ background: "linear-gradient(145deg, #1D1D1F 0%, #3A3A3C 100%)" }}
+          className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-[13px]"
+          style={{ boxShadow: "0 12px 28px rgba(48,47,87,0.20)" }}
         >
-          <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
-            <path d="M8 2L14 5.5V10.5L8 14L2 10.5V5.5L8 2Z" fill="white" fillOpacity="0.9"/>
-            <path d="M8 5L11 6.75V10.25L8 12L5 10.25V6.75L8 5Z" fill="white" fillOpacity="0.4"/>
-          </svg>
+          <img src="/vees-icon.svg" alt="" className="h-full w-full" />
         </div>
         <span
           className="text-[19px] font-semibold"
-          style={{ color: "#1D1D1F", letterSpacing: "-0.04em" }}
+          style={{ color: "var(--vees-text)", letterSpacing: 0 }}
         >
           Vees
         </span>
@@ -131,17 +128,17 @@ export default function AuthPage({ mode }: { mode: "login" | "signup" | "forgot"
       <div
         className="w-full max-w-[400px] rounded-[24px] bg-white p-8"
         style={{
-          border: "1px solid rgba(0,0,0,0.07)",
-          boxShadow: "0 2px 4px rgba(0,0,0,0.03), 0 8px 32px rgba(0,0,0,0.06)",
+          border: "1px solid var(--vees-line)",
+          boxShadow: "0 2px 4px rgba(25,24,45,0.03), 0 18px 48px rgba(48,47,87,0.10)",
         }}
       >
         <h1
           className="text-[28px] font-semibold"
-          style={{ color: "#1D1D1F", letterSpacing: "-0.04em", lineHeight: 1.1 }}
+          style={{ color: "var(--vees-text)", letterSpacing: 0, lineHeight: 1.1 }}
         >
           {titles[mode]}
         </h1>
-        <p className="mt-2 text-[15px] leading-relaxed" style={{ color: "#6E6E73" }}>
+        <p className="mt-2 text-[15px] leading-relaxed" style={{ color: "var(--vees-muted)" }}>
           {subtitles[mode]}
         </p>
 
@@ -204,9 +201,9 @@ export default function AuthPage({ mode }: { mode: "login" | "signup" | "forgot"
           {mode !== "forgot" && (
             <>
               <div className="flex items-center gap-3">
-                <div className="h-px flex-1" style={{ background: "rgba(0,0,0,0.08)" }} />
-                <span className="text-[12px]" style={{ color: "#86868B" }}>or</span>
-                <div className="h-px flex-1" style={{ background: "rgba(0,0,0,0.08)" }} />
+                <div className="h-px flex-1" style={{ background: "var(--vees-line)" }} />
+                <span className="text-[12px]" style={{ color: "var(--vees-muted)" }}>or</span>
+                <div className="h-px flex-1" style={{ background: "var(--vees-line)" }} />
               </div>
 
               <button
@@ -222,18 +219,18 @@ export default function AuthPage({ mode }: { mode: "login" | "signup" | "forgot"
         </div>
 
         {/* Footer links */}
-        <div className="mt-6 flex justify-between text-[13px]" style={{ color: "#6E6E73" }}>
+        <div className="mt-6 flex justify-between text-[13px]" style={{ color: "var(--vees-muted)" }}>
           {mode === "login" ? (
             <>
-              <Link to="/signup" className="transition hover:text-[#0071E3]">
+              <Link to="/signup" className="transition hover:text-violet-700">
                 Create an account
               </Link>
-              <Link to="/forgot-password" className="transition hover:text-[#0071E3]">
+              <Link to="/forgot-password" className="transition hover:text-violet-700">
                 Forgot password?
               </Link>
             </>
           ) : (
-            <Link to="/login" className="transition hover:text-[#0071E3]">
+            <Link to="/login" className="transition hover:text-violet-700">
               Back to sign in
             </Link>
           )}
@@ -241,19 +238,19 @@ export default function AuthPage({ mode }: { mode: "login" | "signup" | "forgot"
       </div>
 
       {/* Legal */}
-      <p className="mt-6 max-w-[380px] text-center text-[12px] leading-relaxed" style={{ color: "#86868B" }}>
+      <p className="mt-6 max-w-[380px] text-center text-[12px] leading-relaxed" style={{ color: "var(--vees-muted)" }}>
         By using Vees, you agree to the{" "}
         <Link
-          className="font-medium transition hover:text-[#1D1D1F]"
-          style={{ color: "#6E6E73" }}
+          className="font-medium transition hover:text-violet-700"
+          style={{ color: "var(--vees-muted)" }}
           to="/terms"
         >
           Terms
         </Link>{" "}
         and{" "}
         <Link
-          className="font-medium transition hover:text-[#1D1D1F]"
-          style={{ color: "#6E6E73" }}
+          className="font-medium transition hover:text-violet-700"
+          style={{ color: "var(--vees-muted)" }}
           to="/privacy"
         >
           Privacy Policy

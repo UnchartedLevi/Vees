@@ -58,8 +58,8 @@ const pageFromPath = (path: string) => {
   return pathEntries.find(([, value]) => normalized === value || normalized.startsWith(`${value}/`))?.[0];
 };
 const Spinner = () => (
-  <div className="flex min-h-screen items-center justify-center" style={{ background: "#F5F5F7" }}>
-    <Loader2 className="animate-spin" style={{ color: "#86868B" }} size={22} />
+  <div className="flex min-h-screen items-center justify-center" style={{ background: "var(--vees-mist)" }}>
+    <Loader2 className="animate-spin" style={{ color: "var(--vees-violet-2)" }} size={22} />
   </div>
 );
 
@@ -89,20 +89,20 @@ function WorkspaceLoadError({ message }: { message: string }) {
   const { refreshWorkspace } = useWorkspace();
   const schemaMissing = message.includes("PGRST205") || message.includes("Could not find the table") || message.includes("schema cache");
   if (schemaMissing) return (
-    <main className="flex min-h-screen items-center justify-center p-5" style={{ background: "#F5F5F7" }}>
+    <main className="flex min-h-screen items-center justify-center p-5" style={{ background: "var(--vees-mist)" }}>
       <section className="card max-w-xl p-8">
-        <span className="inline-flex rounded-[14px] p-3 text-white" style={{ background: "#1D1D1F" }}>
+        <span className="inline-flex rounded-[14px] p-3 text-white" style={{ background: "var(--vees-ink)" }}>
           <Database size={20} />
         </span>
-        <h1 className="mt-6 text-[22px] font-semibold tracking-tight" style={{ color: "#1D1D1F", letterSpacing: "-0.03em" }}>
+        <h1 className="mt-6 text-[22px] font-semibold tracking-tight" style={{ color: "var(--vees-text)", letterSpacing: 0 }}>
           Finish the Supabase database setup
         </h1>
-        <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "#6E6E73" }}>
-          Your Google sign-in worked, but the Vees database tables do not exist yet. Open the Supabase SQL Editor, paste the full contents of <code className="font-mono text-sm" style={{ color: "#1D1D1F" }}>supabase/schema.sql</code>, and run the script once.
+        <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "var(--vees-muted)" }}>
+          Your Google sign-in worked, but the Vees database tables do not exist yet. Open the Supabase SQL Editor, paste the full contents of <code className="font-mono text-sm" style={{ color: "var(--vees-text)" }}>supabase/schema.sql</code>, and run the script once.
         </p>
-        <div className="mt-5 rounded-[14px] p-4 text-[13px] leading-6" style={{ background: "#F5F5F7", color: "#6E6E73" }}>
-          <p>Required first table: <code className="font-mono" style={{ color: "#1D1D1F" }}>public.workspaces</code></p>
-          <p>Local schema file: <code className="font-mono" style={{ color: "#1D1D1F" }}>supabase/schema.sql</code></p>
+        <div className="mt-5 rounded-[14px] p-4 text-[13px] leading-6" style={{ background: "var(--vees-mist)", color: "var(--vees-muted)" }}>
+          <p>Required first table: <code className="font-mono" style={{ color: "var(--vees-text)" }}>public.workspaces</code></p>
+          <p>Local schema file: <code className="font-mono" style={{ color: "var(--vees-text)" }}>supabase/schema.sql</code></p>
         </div>
         <div className="mt-6 flex flex-wrap gap-2">
           <a className="button-primary" href="https://supabase.com/dashboard/project/_/sql/new" target="_blank" rel="noreferrer">
@@ -114,12 +114,12 @@ function WorkspaceLoadError({ message }: { message: string }) {
     </main>
   );
   return (
-    <main className="flex min-h-screen items-center justify-center p-5" style={{ background: "#F5F5F7" }}>
+    <main className="flex min-h-screen items-center justify-center p-5" style={{ background: "var(--vees-mist)" }}>
       <section className="card max-w-lg p-8">
-        <h1 className="text-[22px] font-semibold tracking-tight" style={{ color: "#1D1D1F", letterSpacing: "-0.03em" }}>
+        <h1 className="text-[22px] font-semibold tracking-tight" style={{ color: "var(--vees-text)", letterSpacing: 0 }}>
           Could not load your workspace
         </h1>
-        <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "#6E6E73" }}>{message}</p>
+        <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "var(--vees-muted)" }}>{message}</p>
         <button className="button-primary mt-6" onClick={() => void refreshWorkspace()}>Try again</button>
       </section>
     </main>
@@ -142,12 +142,12 @@ function Callback() {
     if (!loading && !providerError && !error) navigate(user ? "/app/dashboard" : "/login", { replace: true });
   }, [error, loading, navigate, providerError, user]);
   if (providerError || error) return (
-    <main className="flex min-h-screen items-center justify-center p-5" style={{ background: "#F5F5F7" }}>
+    <main className="flex min-h-screen items-center justify-center p-5" style={{ background: "var(--vees-mist)" }}>
       <section className="card max-w-lg p-8">
-        <h1 className="text-[22px] font-semibold tracking-tight" style={{ color: "#1D1D1F", letterSpacing: "-0.03em" }}>
+        <h1 className="text-[22px] font-semibold tracking-tight" style={{ color: "var(--vees-text)", letterSpacing: 0 }}>
           Authentication could not be completed
         </h1>
-        <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "#6E6E73" }}>{providerError || error}</p>
+        <p className="mt-3 text-[15px] leading-relaxed" style={{ color: "var(--vees-muted)" }}>{providerError || error}</p>
         <button className="button-primary mt-6" onClick={() => navigate("/login", { replace: true })}>Back to sign in</button>
       </section>
     </main>
@@ -191,7 +191,7 @@ function Shell() {
 
   const content = () => {
     if (data.loading) return (
-      <div className="card flex items-center gap-3 p-6" style={{ color: "#86868B", fontSize: "0.9375rem" }}>
+      <div className="card flex items-center gap-3 p-6" style={{ color: "var(--vees-muted)", fontSize: "0.9375rem" }}>
         <Loader2 size={16} className="animate-spin" />
         Loading workspace data…
       </div>
@@ -217,7 +217,7 @@ function Shell() {
   const pageTitle = location.pathname === "/app/connect" ? "Connect accounts" : page ?? "Dashboard";
 
   return (
-    <div className="min-h-screen" style={{ background: "#F5F5F7" }}>
+    <div className="min-h-screen">
       <Sidebar
         page={page ?? "Dashboard"}
         brandName={data.workspace.brandName}
@@ -234,18 +234,18 @@ function Shell() {
         <header
           className="sticky top-0 z-20 flex h-[64px] items-center justify-between px-5 sm:px-8"
           style={{
-            background: "rgba(245,245,247,0.78)",
+            background: "rgba(247,244,255,0.78)",
             backdropFilter: "saturate(180%) blur(20px)",
             WebkitBackdropFilter: "saturate(180%) blur(20px)",
-            borderBottom: "1px solid rgba(0,0,0,0.06)",
+            borderBottom: "1px solid var(--vees-line)",
           }}
         >
           <div className="flex items-center gap-3">
             <button
               aria-label="Open menu"
               className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-black/10 bg-white/80 transition lg:hidden"
-              style={{ color: "#6E6E73" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.05)"; }}
+              style={{ color: "var(--vees-muted)" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(48,47,87,0.06)"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.8)"; }}
               onClick={() => setOpen(true)}
             >
@@ -253,7 +253,7 @@ function Shell() {
             </button>
             <h1
               className="text-[16px] font-semibold"
-              style={{ color: "#1D1D1F", letterSpacing: "-0.025em" }}
+              style={{ color: "var(--vees-text)", letterSpacing: 0 }}
             >
               {pageTitle}
             </h1>
@@ -264,15 +264,15 @@ function Shell() {
             className="hidden cursor-text items-center gap-2 rounded-[10px] px-3 py-2 md:flex"
             style={{
               background: "rgba(255,255,255,0.82)",
-              border: "1px solid rgba(0,0,0,0.08)",
-              color: "#86868B",
+              border: "1px solid var(--vees-line)",
+              color: "var(--vees-muted)",
             }}
           >
             <Search size={14} />
             <input
-              className="w-36 bg-transparent text-[14px] outline-none placeholder:text-[#86868B]"
+              className="w-36 bg-transparent text-[14px] outline-none"
               placeholder="Search"
-              style={{ color: "#1D1D1F" }}
+              style={{ color: "var(--vees-text)" }}
             />
           </label>
         </header>
