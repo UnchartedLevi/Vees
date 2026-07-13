@@ -264,6 +264,7 @@ async function syncInstagram(db: Db, workspaceId: string, accountId: string, acc
   const tier = await planTier(db, workspaceId);
   const includeInsights = tier !== "free";
   const insightsByMedia = new Map<string, { reach: number; saved: number; shares: number; views: number; totalInteractions: number }>();
+  const insightDiagnostics: Array<{ mediaId: string; metric: string; status: number; error?: string; value?: number }> = [];
 
   if (includeInsights) {
     await Promise.all(media.map(async (item) => {
@@ -274,10 +275,29 @@ async function syncInstagram(db: Db, workspaceId: string, accountId: string, acc
         try {
           const insightsResponse = await fetch(`https://graph.instagram.com/${item.id}/insights?metric=${metric}&access_token=${currentToken}`);
           const insightsPayload = await insightsResponse.json();
-          if (!insightsResponse.ok) continue;
-          for (const entry of insightsPayload?.data ?? []) values[entry.name] = Number(entry.values?.[0]?.value ?? 0);
+          if (!insightsResponse.ok) {
+            if (insightDiagnostics.length < 30) {
+              insightDiagnostics.push({
+                mediaId: item.id,
+                metric,
+                status: insightsResponse.status,
+                error: insightsPayload.error?.message ?? "Metric unavailable",
+              });
+            }
+            continue;
+          }
+          for (const entry of insightsPayload?.data ?? []) {
+            const value = Number(entry.values?.[0]?.value ?? 0);
+            values[entry.name] = value;
+            if (insightDiagnostics.length < 30) {
+              insightDiagnostics.push({ mediaId: item.id, metric: entry.name, status: insightsResponse.status, value });
+            }
+          }
         } catch {
           // Individual metrics vary by media type and API version. Keep the sync resilient.
+          if (insightDiagnostics.length < 30) {
+            insightDiagnostics.push({ mediaId: item.id, metric, status: 0, error: "Metric request failed" });
+          }
         }
       }
 
@@ -289,6 +309,17 @@ async function syncInstagram(db: Db, workspaceId: string, accountId: string, acc
         totalInteractions: values.total_interactions ?? 0,
       });
     }));
+
+    await db.from("social_accounts").update({
+      provider_meta: {
+        ...(account.provider_meta ?? {}),
+        lastInsightSync: {
+          checkedAt: new Date().toISOString(),
+          mediaCount: media.length,
+          diagnostics: insightDiagnostics,
+        },
+      },
+    }).eq("id", accountId);
   }
 
   const captionTypeMap: Record<string, string> = { IMAGE: "Image", VIDEO: "Video", CAROUSEL_ALBUM: "Carousel", REELS: "Reel" };
