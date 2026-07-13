@@ -41,13 +41,13 @@ export default function Sidebar({ page, brandName, scheduledCount, onNavigate, o
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-[260px] flex-col bg-white/95 backdrop-blur-xl transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-[260px] flex-col bg-white/90 backdrop-blur-2xl transition-transform duration-300 lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{ borderRight: "1px solid rgba(0,0,0,0.07)" }}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between px-5 pt-6 pb-5">
+        <div className="flex items-center justify-between px-5 pb-5 pt-6">
           <div className="flex items-center gap-2.5">
             <div
               className="flex h-8 w-8 items-center justify-center rounded-[10px] text-white"
@@ -78,9 +78,10 @@ export default function Sidebar({ page, brandName, scheduledCount, onNavigate, o
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3">
           {links.map(([label, Icon]) => {
             const active = page === label;
+            const primary = label === "Dashboard" || label === "Connect";
             return (
               <button
                 key={label}
@@ -89,17 +90,17 @@ export default function Sidebar({ page, brandName, scheduledCount, onNavigate, o
                 style={{
                   fontSize: "0.9375rem",
                   fontWeight: active ? 600 : 400,
-                  backgroundColor: active ? "rgba(0, 113, 227, 0.08)" : "transparent",
-                  color: active ? "#0071E3" : "#6E6E73",
+                  backgroundColor: active ? "rgba(0, 113, 227, 0.10)" : primary ? "rgba(0,0,0,0.025)" : "transparent",
+                  color: active ? "#0071E3" : primary ? "#1D1D1F" : "#6E6E73",
                 }}
                 onMouseEnter={(e) => {
                   if (!active) (e.currentTarget as HTMLButtonElement).style.backgroundColor = "rgba(0,0,0,0.04)";
                 }}
                 onMouseLeave={(e) => {
-                  if (!active) (e.currentTarget as HTMLButtonElement).style.backgroundColor = "transparent";
+                  if (!active) (e.currentTarget as HTMLButtonElement).style.backgroundColor = primary ? "rgba(0,0,0,0.025)" : "transparent";
                 }}
               >
-                <Icon size={17} className={active ? "text-[#0071E3]" : "text-[#86868B]"} />
+                <Icon size={17} className={active ? "text-[#0071E3]" : primary ? "text-[#1D1D1F]" : "text-[#86868B]"} />
                 {label}
               </button>
             );
@@ -109,10 +110,7 @@ export default function Sidebar({ page, brandName, scheduledCount, onNavigate, o
         {/* Footer */}
         <div className="px-4 pb-6 pt-4 space-y-3" style={{ borderTop: "1px solid rgba(0,0,0,0.06)" }}>
           {/* Publishing pulse */}
-          <div
-            className="rounded-[14px] p-3.5"
-            style={{ background: "#F5F5F7", border: "1px solid rgba(0,0,0,0.06)" }}
-          >
+          <div className="rounded-[14px] border border-slate-200 bg-slate-50 p-3.5">
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: "#86868B" }}>
               Publishing pulse
             </p>

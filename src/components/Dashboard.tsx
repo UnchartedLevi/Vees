@@ -62,7 +62,7 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
         </div>
         <div className="grid gap-3 lg:grid-cols-3">
           {connected.length ? connected.map((account) => (
-            <article key={account.id} className="rounded-[16px] border border-emerald-200 bg-white p-4 shadow-card">
+            <article key={account.id} className="card card-hover p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-700">
@@ -88,7 +88,7 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
                 </div>
               </div>
               <button
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
+                className="button-primary mt-4 w-full"
                 onClick={() => onCreatePost?.(account.platform)}
               >
                 <PencilLine size={15} />
@@ -96,7 +96,7 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
               </button>
             </article>
           )) : (
-            <article className="rounded-[16px] border border-slate-200 bg-white p-5 shadow-card lg:col-span-3">
+            <article className="card p-5 lg:col-span-3">
               <h3 className="text-sm font-semibold text-slate-950">No connected channels yet</h3>
               <p className="mt-2 text-sm leading-6 text-slate-500">Connect YouTube or Instagram to make channel-specific analytics and planning available.</p>
               <button className="button-primary mt-4" onClick={onConnect}>Connect social account</button>
@@ -111,14 +111,14 @@ export default function Dashboard({ posts, scheduledPosts, ideas, workspace, soc
           {availablePlatforms.map((platform) => (
             <button
               key={platform}
-              className="rounded-[14px] border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+              className="card card-hover p-4 text-left"
               onClick={onConnect}
             >
               <p className="flex items-center gap-2 text-sm font-semibold text-slate-950">
                 <SocialPlatformIcon platform={platform} size="md" />
                 {platformLabel(platform)}
               </p>
-              <p className="mt-1 text-xs leading-5 text-slate-500">{platform === "TikTok" ? "Not ready yet" : "Connect or simulate"}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">{platform === "TikTok" ? "Approval required" : "Connection planned"}</p>
             </button>
           ))}
         </div>

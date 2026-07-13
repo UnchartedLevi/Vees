@@ -120,18 +120,19 @@ export default function Calendar({ scheduledPosts, setScheduledPosts, setIdeas, 
         action={<button className="button-primary" onClick={() => openForDay(toDateKey(new Date()))}><CalendarPlus size={16} /> Plan content</button>}
       />
 
-      <section className="card p-4">
+      <section className="section-panel p-4">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
           <div className="flex items-center gap-2">
             <button aria-label="Previous month" className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50" onClick={() => setVisibleMonth((current) => addMonths(current, -1))}><ChevronLeft size={16} /></button>
             <p className="min-w-44 text-center text-base font-semibold text-slate-950">{monthLabel(visibleMonth)}</p>
             <button aria-label="Next month" className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-50" onClick={() => setVisibleMonth((current) => addMonths(current, 1))}><ChevronRight size={16} /></button>
+            <button className="button-secondary ml-1 px-3 py-2 text-sm" onClick={() => setVisibleMonth(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}>Today</button>
           </div>
-          <div className="flex gap-2 overflow-x-auto xl:ml-auto">
-            <button onClick={() => setPlatform("All")} className={`shrink-0 rounded-xl px-3 py-2 text-sm font-semibold ${platform === "All" ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-500"}`}>All</button>
+          <div className="segmented-control overflow-x-auto xl:ml-auto">
+            <button onClick={() => setPlatform("All")} className={`segmented-item ${platform === "All" ? "segmented-item-active" : ""}`}>All</button>
             {channelOrder.map((item) => {
               const account = accountForPlatform(socialAccounts, item);
-              return <button key={item} onClick={() => setPlatform(item)} className={`inline-flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold ${platform === item ? "border-slate-950 bg-slate-950 text-white" : account ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 bg-white text-slate-500"}`}><SocialPlatformIcon platform={item} size="sm" />{platformLabel(item)}</button>;
+              return <button key={item} onClick={() => setPlatform(item)} className={`segmented-item inline-flex items-center gap-2 ${platform === item ? "segmented-item-active" : account ? "text-emerald-700" : ""}`}><SocialPlatformIcon platform={item} size="sm" />{platformLabel(item)}</button>;
             })}
           </div>
           <select aria-label="Filter calendar by status" className="input xl:w-44" value={status} onChange={(e) => setStatus(e.target.value as "All" | ScheduleStatus)}>
@@ -153,7 +154,7 @@ export default function Calendar({ scheduledPosts, setScheduledPosts, setIdeas, 
                 key={cell.key}
                 disabled={!cell.dateKey}
                 onClick={() => cell.dateKey && openForDay(cell.dateKey)}
-                className={`min-h-32 border-b border-r border-slate-100 p-2 text-left align-top transition ${cell.dateKey ? "bg-white hover:bg-slate-50" : "bg-slate-50/50"}`}
+                className={`min-h-32 border-b border-r border-slate-100 p-2 text-left align-top transition ${cell.dateKey ? "bg-white hover:bg-blue-50/40" : "bg-slate-50/50"}`}
               >
                 {cell.dateKey && (
                   <>

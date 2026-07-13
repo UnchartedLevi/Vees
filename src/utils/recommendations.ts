@@ -35,7 +35,7 @@ export const generateRecommendations = (posts: Post[], scheduled: ScheduledPost[
   const nextWeek = scheduled.filter((post) => pendingStatuses.has(post.status) && post.scheduledDate >= nextWeekStart && post.scheduledDate <= nextWeekEnd);
   const bestPeriod = getBestPostingPeriod(posts);
   if (!posts.length) return [
-    { id: "rec-track", title: "Track your first published post.", detail: "Add performance manually or import demo history to unlock analytics recommendations.", type: "planning" },
+    { id: "rec-track", title: "Track your first published post.", detail: "Connect a live account or add performance manually to unlock analytics recommendations.", type: "planning" },
     { id: "rec-plan", title: nextWeek.length ? `${nextWeek.length} ${nextWeek.length === 1 ? "post is" : "posts are"} planned for next week.` : "You have no posts scheduled for next week.", detail: ideas.length ? "Convert a ready content idea into your calendar." : "Add a few ideas to build your pipeline.", type: "planning" },
   ];
   return [

@@ -46,21 +46,21 @@ const providers: Provider[] = [
     displayName: "LinkedIn",
     status: "planned",
     note: "Requires LinkedIn app review and approved API access before OAuth can go live.",
-    features: ["App review needed", "Read access pending", "Manual demo available"],
+    features: ["App review needed", "Read access pending", "Connection planned"],
   },
   {
     name: "X",
     displayName: "X",
     status: "planned",
     note: "Requires X developer access and OAuth setup before Vees can connect accounts.",
-    features: ["Developer access needed", "OAuth pending", "Manual demo available"],
+    features: ["Developer access needed", "OAuth pending", "Connection planned"],
   },
   {
     name: "Facebook",
     displayName: "Facebook",
     status: "planned",
     note: "Requires Page permissions and Meta app review before account sync is available.",
-    features: ["Page permissions needed", "Review pending", "Manual demo available"],
+    features: ["Page permissions needed", "Review pending", "Connection planned"],
   },
 ];
 
@@ -271,7 +271,7 @@ export default function ConnectSocial() {
             Import mode
           </div>
           <p className="mt-2 text-2xl font-semibold text-slate-950">{importModes.find(([value]) => value === mode)?.[1]}</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">Used for the next live or demo connection.</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Used for the next live connection.</p>
         </div>
       </section>
 

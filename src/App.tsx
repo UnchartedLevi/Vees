@@ -214,9 +214,9 @@ function Shell() {
       <main className="lg:ml-[260px]">
         {/* Header */}
         <header
-          className="sticky top-0 z-20 flex h-[60px] items-center justify-between px-5 sm:px-8"
+          className="sticky top-0 z-20 flex h-[64px] items-center justify-between px-5 sm:px-8"
           style={{
-            background: "rgba(245,245,247,0.85)",
+            background: "rgba(245,245,247,0.78)",
             backdropFilter: "saturate(180%) blur(20px)",
             WebkitBackdropFilter: "saturate(180%) blur(20px)",
             borderBottom: "1px solid rgba(0,0,0,0.06)",
@@ -225,16 +225,16 @@ function Shell() {
           <div className="flex items-center gap-3">
             <button
               aria-label="Open menu"
-              className="flex h-8 w-8 items-center justify-center rounded-[8px] transition lg:hidden"
+              className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-black/10 bg-white/80 transition lg:hidden"
               style={{ color: "#6E6E73" }}
               onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(0,0,0,0.05)"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.8)"; }}
               onClick={() => setOpen(true)}
             >
               <Menu size={18} />
             </button>
             <h1
-              className="text-[17px] font-semibold"
+              className="text-[16px] font-semibold"
               style={{ color: "#1D1D1F", letterSpacing: "-0.025em" }}
             >
               {pageTitle}
@@ -243,10 +243,10 @@ function Shell() {
 
           {/* Search */}
           <label
-            className="hidden cursor-text items-center gap-2 rounded-[10px] px-3 py-1.5 md:flex"
+            className="hidden cursor-text items-center gap-2 rounded-[10px] px-3 py-2 md:flex"
             style={{
-              background: "rgba(0,0,0,0.05)",
-              border: "1px solid rgba(0,0,0,0.06)",
+              background: "rgba(255,255,255,0.82)",
+              border: "1px solid rgba(0,0,0,0.08)",
               color: "#86868B",
             }}
           >
@@ -261,7 +261,9 @@ function Shell() {
 
         {/* Content */}
         <div className="p-5 sm:p-7 lg:p-8 xl:p-10">
-          {content()}
+          <div className="mx-auto max-w-[1440px]">
+            {content()}
+          </div>
         </div>
       </main>
     </div>
