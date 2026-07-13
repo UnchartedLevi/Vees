@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { BarChart3, Bookmark, Eye, Heart, MessageCircle, Plus, Share2, Sparkles, Trash2, TrendingUp } from "lucide-react";
+import { BarChart3, Bookmark, ExternalLink, Eye, Heart, ImageIcon, MessageCircle, Plus, Share2, Sparkles, Trash2, TrendingUp } from "lucide-react";
 import type { AppDataProps } from "../App";
 import { contentTypes } from "../data/options";
 import type { ContentType, Post, SocialAccount, SocialPlatform } from "../types";
@@ -220,19 +220,46 @@ function PostPerformanceDetail({ post, account }: { post: Post; account?: Social
 
   return (
     <div className="space-y-5">
-      <section className="rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 text-white">
+        <div className="grid lg:grid-cols-[280px_1fr]">
+          <div className="relative min-h-52 bg-white/5 lg:min-h-full">
+            {post.mediaUrl ? (
+              <img src={post.mediaUrl} alt={`Thumbnail for ${post.title}`} className="h-full min-h-52 w-full object-cover" />
+            ) : (
+              <div className="flex h-full min-h-52 items-center justify-center text-white/45">
+                <ImageIcon size={36} />
+              </div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
+          </div>
+          <div className="flex flex-col gap-4 p-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0">
             <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase text-white/60">
               <SocialPlatformIcon platform={post.platform} size="sm" />
-              {account ? account.accountName : platformLabel(post.platform)} · {post.contentType}
+              {account ? account.accountName : platformLabel(post.platform)} / {post.contentType}
             </p>
             <h3 className="mt-3 max-w-3xl text-2xl font-semibold leading-tight tracking-tight">{post.title}</h3>
             <p className="mt-3 text-sm text-white/60">Posted {post.datePosted}</p>
+            {post.externalUrl ? (
+              <a
+                href={post.externalUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-white/90"
+              >
+                Open original post
+                <ExternalLink size={14} />
+              </a>
+            ) : (
+              <p className="mt-5 rounded-xl border border-white/10 bg-white/10 px-3.5 py-2 text-sm text-white/60">
+                Original post link is not available for this synced item yet.
+              </p>
+            )}
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3">
             <p className="text-xs font-semibold uppercase text-white/50">Performance signal</p>
             <p className="mt-1 flex items-center gap-2 text-sm font-semibold"><Sparkles size={15} /> {insightForPost(post)}</p>
+          </div>
           </div>
         </div>
       </section>

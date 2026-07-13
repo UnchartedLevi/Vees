@@ -52,6 +52,9 @@ export interface Post {
   impressions: number;
   campaignId?: string;
   contentGoal: string;
+  mediaUrl?: string;
+  externalPostId?: string;
+  externalUrl?: string;
   postingTime?: string;
   isShort?: boolean;
   retentionRate?: number;
