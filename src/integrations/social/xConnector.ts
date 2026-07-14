@@ -1,1 +1,39 @@
-import type{SocialConnector}from"./types";const pending=async()=>{throw new Error("X OAuth setup required.")};export const xConnector:SocialConnector={platform:"X",connect:pending,disconnect:pending,syncAccount:pending,syncPosts:pending,syncAnalytics:pending};
+import { requireSupabase } from "../../lib/supabaseClient";
+import type { ImportMode, SocialAccount } from "../../types";
+import { authHeaders } from "./authHeaders";
+import { readableFunctionError } from "./functionErrors";
+import type { SocialConnector } from "./types";
+
+export const xConnector: SocialConnector = {
+  platform: "X",
+  async connect(workspaceId: string, input?: { importMode?: ImportMode }) {
+    const db = requireSupabase();
+    const { data, error } = await db.functions.invoke<{ authorizeUrl: string }>("start-x-oauth", {
+      body: { workspaceId, importMode: input?.importMode ?? "from_today" },
+      headers: await authHeaders(db),
+    });
+    if (error) throw new Error(await readableFunctionError(error, "X connection could not start."));
+    if (!data?.authorizeUrl) throw new Error("X authorization URL was not returned.");
+    window.location.assign(data.authorizeUrl);
+    return new Promise<SocialAccount>(() => undefined);
+  },
+  async disconnect(workspaceId, accountId) {
+    const { error } = await requireSupabase().from("social_accounts").update({ connection_status: "disconnected" }).eq("workspace_id", workspaceId).eq("id", accountId);
+    if (error) throw error;
+  },
+  async syncAccount(account) {
+    await this.syncPosts(account);
+  },
+  async syncPosts(account) {
+    const db = requireSupabase();
+    const { data, error } = await db.functions.invoke<{ syncedPosts: number }>("sync-social-account", {
+      body: { workspaceId: account.workspaceId, accountId: account.id },
+      headers: await authHeaders(db),
+    });
+    if (error) throw new Error(await readableFunctionError(error, "X sync failed."));
+    return data ?? undefined;
+  },
+  async syncAnalytics(account) {
+    await this.syncPosts(account);
+  },
+};

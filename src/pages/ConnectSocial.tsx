@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useData } from "../context/DataContext";
 import { metaConnector } from "../integrations/social/metaConnector";
 import { youtubeConnector } from "../integrations/social/youtubeConnector";
+import { xConnector } from "../integrations/social/xConnector";
 import { disconnectSocialAccount } from "../services/socialAccountService";
 import type { ImportMode, SocialPlatform } from "../types";
 import PageHeader from "../components/PageHeader";
@@ -51,9 +52,9 @@ const providers: Provider[] = [
   {
     name: "X",
     displayName: "X",
-    status: "planned",
-    note: "Requires X developer access and OAuth setup before Vees can connect accounts.",
-    features: ["Developer access needed", "OAuth pending", "Connection planned"],
+    status: "live",
+    note: "Connect an X account to import posts and public engagement metrics.",
+    features: ["Profile sync", "Post import", "Public metrics"],
   },
   {
     name: "Facebook",
@@ -150,8 +151,8 @@ export default function ConnectSocial() {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const providerLabels: Record<string, string> = { tiktok: "TikTok", youtube: "YouTube", instagram: "Instagram", social: "Provider" };
-    const providerKey = ["tiktok", "youtube", "instagram", "social"].find((key) => params.has(key));
+    const providerLabels: Record<string, string> = { tiktok: "TikTok", youtube: "YouTube", instagram: "Instagram", x: "X", social: "Provider" };
+    const providerKey = ["tiktok", "youtube", "instagram", "x", "social"].find((key) => params.has(key));
     if (!providerKey) return;
     const status = params.get(providerKey);
     const label = providerLabels[providerKey];
@@ -166,6 +167,7 @@ export default function ConnectSocial() {
   const connectorFor = (providerName: SocialPlatform) =>
     providerName === "YouTube Shorts" ? youtubeConnector
     : providerName === "Instagram" ? metaConnector
+    : providerName === "X" ? xConnector
     : null;
 
   const connectProvider = async (providerName: SocialPlatform) => {
@@ -245,7 +247,7 @@ export default function ConnectSocial() {
       <PageHeader
         eyebrow="Channel connections"
         title="Connect social accounts"
-        description="Instagram and YouTube are ready for live OAuth. TikTok is paused until the developer app approval releases the Client Key."
+        description="Instagram, YouTube, and X are ready for live OAuth. TikTok is paused until the developer app approval releases the Client Key."
       />
 
       <section className="grid gap-3 md:grid-cols-3">
@@ -254,8 +256,8 @@ export default function ConnectSocial() {
             <ShieldCheck size={16} />
             Live connectors
           </div>
-          <p className="mt-2 text-2xl font-semibold text-slate-950">2</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">Instagram and YouTube can connect now.</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-950">3</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Instagram, YouTube, and X can connect now.</p>
         </div>
         <div className="rounded-lg border border-amber-200 bg-white p-4 shadow-sm">
           <div className="flex items-center gap-2 text-sm font-semibold text-amber-800">
@@ -483,3 +485,4 @@ export default function ConnectSocial() {
     </div>
   );
 }
+

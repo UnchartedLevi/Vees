@@ -6,6 +6,7 @@ import {
   planTier,
   requireEnv as requireYouTubeEnv,
 } from "../_shared/youtube.ts";
+import { clientAuthHeader as xClientAuthHeader, decryptToken as decryptXToken, encryptToken as encryptXToken, requireEnv as requireXEnv } from "../_shared/x.ts";
 
 type Db = ReturnType<typeof serviceClient>;
 
@@ -160,7 +161,7 @@ async function syncYouTube(db: Db, workspaceId: string, accountId: string, accou
   const videos: any[] = videosPayload?.items ?? [];
 
   // Channel analytics (retention, watch time) require the yt-analytics.readonly scope
-  // and are only fetched for workspaces on a paid plan — see src/utils/planLimits.ts.
+  // and are only fetched for workspaces on a paid plan - see src/utils/planLimits.ts.
   const tier = await planTier(db, workspaceId);
   const includeChannelAnalytics = tier !== "free";
   const retentionByVideo = new Map<string, number>();
@@ -222,6 +223,99 @@ async function syncYouTube(db: Db, workspaceId: string, accountId: string, accou
   });
 }
 
+async function refreshXAccessToken(db: Db, account: any) {
+  const refreshToken = await decryptXToken(account.refresh_token_encrypted);
+  if (!refreshToken) throw new Error("X account is missing a refresh token.");
+  const response = await fetch("https://api.x.com/2/oauth2/token", {
+    method: "POST",
+    headers: {
+      authorization: xClientAuthHeader(),
+      "content-type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: refreshToken,
+      client_id: requireXEnv("X_CLIENT_ID"),
+    }),
+  });
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.error_description ?? payload.error ?? "X token refresh failed.");
+  await db.from("social_accounts").update({
+    access_token_encrypted: await encryptXToken(payload.access_token),
+    refresh_token_encrypted: await encryptXToken(payload.refresh_token ?? refreshToken),
+    token_expires_at: new Date(Date.now() + Number(payload.expires_in ?? 0) * 1000).toISOString(),
+  }).eq("id", account.id);
+  return payload.access_token as string;
+}
+
+async function syncX(db: Db, workspaceId: string, accountId: string, account: any) {
+  let accessToken = await decryptXToken(account.access_token_encrypted);
+  if (!accessToken || (account.token_expires_at && new Date(account.token_expires_at).getTime() < Date.now() + 60_000)) {
+    accessToken = await refreshXAccessToken(db, account);
+  }
+
+  const userResponse = await fetch("https://api.x.com/2/users/me?user.fields=profile_image_url,username,name", {
+    headers: { authorization: `Bearer ${accessToken}` },
+  });
+  const userPayload = await userResponse.json();
+  if (!userResponse.ok) throw new Error(userPayload.detail ?? userPayload.title ?? "Could not read the X profile.");
+  const user = userPayload?.data ?? {};
+  const providerAccountId = String(user.id ?? account.provider_account_id ?? "");
+  const username = String(user.username ?? account.provider_meta?.username ?? "");
+  const profileImageUrl = user.profile_image_url ?? account.provider_meta?.profilePictureUrl ?? null;
+
+  await db.from("social_accounts").update({
+    account_name: user.name ?? account.account_name,
+    account_handle: username ? `@${username}` : account.account_handle,
+    provider_account_id: providerAccountId || account.provider_account_id,
+    provider_meta: { ...(account.provider_meta ?? {}), username, thumbnailUrl: profileImageUrl, profilePictureUrl: profileImageUrl },
+  }).eq("id", accountId);
+
+  if (!providerAccountId) throw new Error("X account id is unavailable. Reconnect X and try again.");
+
+  const tweetParams = new URLSearchParams({
+    max_results: "100",
+    "tweet.fields": "created_at,public_metrics,entities",
+    exclude: "retweets,replies",
+  });
+  const tweetResponse = await fetch(`https://api.x.com/2/users/${providerAccountId}/tweets?${tweetParams.toString()}`, {
+    headers: { authorization: `Bearer ${accessToken}` },
+  });
+  const tweetPayload = await tweetResponse.json();
+  if (!tweetResponse.ok) throw new Error(tweetPayload.detail ?? tweetPayload.title ?? "X post sync failed.");
+
+  const tweets: any[] = tweetPayload?.data ?? [];
+  return tweets.map((tweet) => {
+    const metrics = tweet.public_metrics ?? {};
+    const impressions = Number(metrics.impression_count ?? 0);
+    const likes = Number(metrics.like_count ?? 0);
+    const comments = Number(metrics.reply_count ?? 0);
+    const shares = Number(metrics.retweet_count ?? 0) + Number(metrics.quote_count ?? 0);
+    const saves = Number(metrics.bookmark_count ?? 0);
+    const totalEngagement = likes + comments + shares + saves;
+    return {
+      workspace_id: workspaceId,
+      social_account_id: accountId,
+      platform: "X",
+      title: tweet.text ? String(tweet.text).slice(0, 120) : "X post",
+      caption: tweet.text ? String(tweet.text).slice(0, 500) : null,
+      content_type: "Text",
+      status: "published",
+      media_url: null,
+      external_url: username ? `https://x.com/${username}/status/${tweet.id}` : null,
+      posted_at: tweet.created_at ?? null,
+      likes,
+      comments,
+      shares,
+      saves,
+      reach: impressions,
+      impressions,
+      engagement_rate: impressions ? (totalEngagement / impressions) * 100 : 0,
+      source: "x",
+      external_post_id: tweet.id,
+    };
+  });
+}
 async function readInstagramProfile(accessToken: string) {
   const load = async (fields: string) => {
     const response = await fetch(`https://graph.instagram.com/me?fields=${encodeURIComponent(fields)}&access_token=${accessToken}`);
@@ -286,7 +380,7 @@ async function syncInstagram(db: Db, workspaceId: string, accountId: string, acc
   }
 
   // Reach, saved, and shares come from a separate Insights call per media item and are only
-  // fetched on paid plans — see src/utils/planLimits.ts. Free plans get like/comment counts,
+  // fetched on paid plans - see src/utils/planLimits.ts. Free plans get like/comment counts,
   // which are already included on the media object above at no extra API cost.
   const tier = await planTier(db, workspaceId);
   const includeInsights = tier !== "free";
@@ -404,6 +498,7 @@ Deno.serve(async (request) => {
     if (account.platform === "TikTok") posts = await syncTikTok(db, workspaceId, accountId, account);
     else if (account.platform === "YouTube Shorts") posts = await syncYouTube(db, workspaceId, accountId, account);
     else if (account.platform === "Instagram") posts = await syncInstagram(db, workspaceId, accountId, account);
+    else if (account.platform === "X") posts = await syncX(db, workspaceId, accountId, account);
     else return json({ error: `Sync is not supported for ${account.platform} yet` }, 400);
 
     if (posts.length) {
@@ -431,3 +526,4 @@ Deno.serve(async (request) => {
     return json({ error: error instanceof Error ? error.message : "Could not sync social account" }, 500);
   }
 });
+

@@ -2,9 +2,10 @@ import { redirect, requireEnv, serviceClient, sha256 } from "../_shared/core.ts"
 import { encryptToken as encryptInstagramToken, redirectUri as instagramRedirectUri } from "../_shared/instagram.ts";
 import { encryptToken as encryptTikTokToken, redirectUri as tiktokRedirectUri } from "../_shared/tiktok.ts";
 import { encryptToken as encryptYouTubeToken, redirectUri as youtubeRedirectUri } from "../_shared/youtube.ts";
+import { clientAuthHeader as xClientAuthHeader, encryptToken as encryptXToken, redirectUri as xRedirectUri, xScopes } from "../_shared/x.ts";
 
 type Db = ReturnType<typeof serviceClient>;
-type StateRow = { id: string; workspace_id: string; import_mode: string };
+type StateRow = { id: string; workspace_id: string; import_mode: string; code_verifier?: string | null };
 
 async function completeTikTok(request: Request, code: string, stateRow: StateRow, db: Db) {
   const tokenResponse = await fetch("https://open.tiktokapis.com/v2/oauth/token/", {
@@ -138,7 +139,7 @@ async function readInstagramProfile(accessToken: string) {
 }
 
 async function completeInstagram(request: Request, rawCode: string, stateRow: StateRow, db: Db) {
-  // Instagram sometimes appends a "#_" suffix to the returned code — strip it before exchange.
+  // Instagram sometimes appends a "#_" suffix to the returned code - strip it before exchange.
   const code = rawCode.replace(/#_$/, "");
 
   const shortLivedResponse = await fetch("https://api.instagram.com/oauth/access_token", {
@@ -201,6 +202,66 @@ async function completeInstagram(request: Request, rawCode: string, stateRow: St
   }
 }
 
+async function completeX(request: Request, code: string, stateRow: StateRow, db: Db) {
+  if (!stateRow.code_verifier) throw new Error("X OAuth verifier was not found. Start the connection again.");
+
+  const tokenResponse = await fetch("https://api.x.com/2/oauth2/token", {
+    method: "POST",
+    headers: {
+      authorization: xClientAuthHeader(),
+      "content-type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      code,
+      grant_type: "authorization_code",
+      redirect_uri: xRedirectUri(request),
+      code_verifier: stateRow.code_verifier,
+    }),
+  });
+  const tokenPayload = await tokenResponse.json();
+  if (!tokenResponse.ok) throw new Error(tokenPayload.error_description ?? tokenPayload.error ?? "X token exchange failed.");
+
+  const accessToken = tokenPayload.access_token as string;
+  const refreshToken = tokenPayload.refresh_token as string | undefined;
+  const scopes = String(tokenPayload.scope ?? xScopes.join(" ")).split(" ").map((scope) => scope.trim()).filter(Boolean);
+
+  const userResponse = await fetch("https://api.x.com/2/users/me?user.fields=profile_image_url,username,name", {
+    headers: { authorization: `Bearer ${accessToken}` },
+  });
+  const userPayload = await userResponse.json();
+  if (!userResponse.ok) throw new Error(userPayload.detail ?? userPayload.title ?? "Could not read the X profile.");
+  const user = userPayload?.data ?? {};
+  const accountId = String(user.id ?? "");
+  if (!accountId) throw new Error("X did not return an account id.");
+
+  const username = String(user.username ?? "");
+  const profileImageUrl = user.profile_image_url ?? null;
+  const expiresAt = new Date(Date.now() + Number(tokenPayload.expires_in ?? 0) * 1000).toISOString();
+  const values = {
+    workspace_id: stateRow.workspace_id,
+    platform: "X",
+    account_name: user.name ?? username ?? "X account",
+    account_handle: username ? `@${username}` : accountId,
+    provider_account_id: accountId,
+    connection_status: "connected",
+    import_mode: stateRow.import_mode,
+    access_token_encrypted: await encryptXToken(accessToken),
+    refresh_token_encrypted: await encryptXToken(refreshToken),
+    token_expires_at: expiresAt,
+    scopes,
+    last_synced_at: new Date().toISOString(),
+    provider_meta: { username, thumbnailUrl: profileImageUrl, profilePictureUrl: profileImageUrl },
+  };
+
+  const { data: existing } = await db.from("social_accounts").select("id").eq("workspace_id", stateRow.workspace_id).eq("platform", "X").eq("provider_account_id", accountId).maybeSingle();
+  if (existing) {
+    const { error: updateError } = await db.from("social_accounts").update(values).eq("id", existing.id);
+    if (updateError) throw updateError;
+  } else {
+    const { error: insertError } = await db.from("social_accounts").insert(values);
+    if (insertError) throw insertError;
+  }
+}
 Deno.serve(async (request) => {
   const url = new URL(request.url);
   const error = url.searchParams.get("error") ?? url.searchParams.get("error_description");
@@ -221,6 +282,7 @@ Deno.serve(async (request) => {
     if (provider === "tiktok") await completeTikTok(request, code, stateRow, db);
     else if (provider === "youtube") await completeYouTube(request, code, stateRow, db);
     else if (provider === "instagram") await completeInstagram(request, code, stateRow, db);
+    else if (provider === "x") await completeX(request, code, stateRow, db);
     else throw new Error(`Unsupported provider: ${provider}`);
 
     await db.from("oauth_states").delete().eq("id", stateRow.id);
@@ -229,3 +291,4 @@ Deno.serve(async (request) => {
     return redirect(`/app/connect?${provider}=error&message=${encodeURIComponent(caught instanceof Error ? caught.message : "Connection failed")}`);
   }
 });
+
