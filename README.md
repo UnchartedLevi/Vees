@@ -11,6 +11,7 @@ Vees is a Supabase-powered social media management SaaS foundation. It helps cre
 - Manual post tracking and scheduled posts stored in Supabase
 - Demo social connector with configurable import modes and idempotent demo seeding
 - Typed social connector interface with placeholders for Meta, TikTok, LinkedIn, X, and YouTube
+- X provider setup guide for server-side Xquik sync without browser-exposed API keys
 - TikTok OAuth foundation with Supabase Edge Functions and server-side token handling
 - Supabase Edge Function placeholders for OAuth callbacks, sync jobs, and token refresh
 - Clean missing-environment setup screen instead of a runtime crash
@@ -93,6 +94,7 @@ Do not put real social access tokens in localStorage or frontend JavaScript. Pro
 - Social provider modules: `src/integrations/social`
 - Demo seed helper: `src/utils/seedDemoData.ts`
 - TikTok setup: `TIKTOK_SETUP.md`
+- X provider setup: `X_PROVIDER_SETUP.md`
 
 ## Production Build
 
