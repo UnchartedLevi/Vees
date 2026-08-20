@@ -31,8 +31,6 @@
 
   body {
     background:
-      radial-gradient(circle at top left, rgba(159, 131, 255, 0.18), transparent 26rem),
-      radial-gradient(circle at top right, rgba(246, 166, 213, 0.16), transparent 24rem),
       linear-gradient(180deg, #FFFFFF 0%, var(--vees-mist) 28rem),
       #F7F4FF;
     color: var(--vees-text);
@@ -65,6 +63,15 @@
     transition:
       box-shadow 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94),
       transform 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .page-content {
+    animation: page-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .page-content .card,
+  .page-content .section-panel {
+    animation: surface-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .card-hover:hover {
@@ -149,6 +156,15 @@
     background: var(--vees-muted);
     cursor: not-allowed;
     transform: none;
+  }
+
+  .button-primary:focus-visible,
+  .button-secondary:focus-visible,
+  button:focus-visible,
+  a:focus-visible,
+  select:focus-visible {
+    outline: 3px solid rgba(124, 92, 255, 0.28);
+    outline-offset: 2px;
   }
 
   .button-secondary {
@@ -292,6 +308,29 @@
   }
 }
 
+@media (max-width: 639px) {
+  .page-content .card,
+  .page-content .section-panel {
+    border-radius: 14px;
+  }
+
+  .button-primary,
+  .button-secondary {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 @keyframes analytics-bar-in {
   from {
     transform: scaleX(0);
@@ -301,4 +340,14 @@
     transform: scaleX(1);
     opacity: 1;
   }
+}
+
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes surface-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

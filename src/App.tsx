@@ -278,7 +278,7 @@ function Shell() {
         </header>
 
         {/* Content */}
-        <div className="p-5 sm:p-7 lg:p-8 xl:p-10">
+        <div className="page-content px-4 pb-28 pt-5 sm:p-7 lg:p-8 lg:pb-8 xl:p-10">
           <div className="mx-auto max-w-[1440px]">
             {content()}
           </div>

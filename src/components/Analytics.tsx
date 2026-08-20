@@ -103,6 +103,13 @@ export default function Analytics({ posts, setPosts, campaigns, socialAccounts, 
       />
 
       <section className="card p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-950">Choose a channel</p>
+            <p className="mt-0.5 text-xs text-slate-500">Analytics stays scoped to the account you select.</p>
+          </div>
+          <BarChart3 size={18} className="text-violet-500" />
+        </div>
         <div className="flex gap-2 overflow-x-auto pb-1">
           <button
             onClick={() => setAccountFilter("All")}
@@ -142,7 +149,7 @@ export default function Analytics({ posts, setPosts, campaigns, socialAccounts, 
       </section>
 
       <div className="card overflow-hidden">
-        <div className="flex flex-col gap-3 border-b border-slate-100 p-5 sm:flex-row">
+        <div className="grid gap-3 border-b border-slate-100 p-4 sm:grid-cols-2 sm:p-5 lg:flex">
           <select aria-label="Filter analytics by connected account" className="input sm:w-64" value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)}>
             <option value="All">All accounts</option>
             {connectedAccounts.map((account) => (
@@ -155,12 +162,12 @@ export default function Analytics({ posts, setPosts, campaigns, socialAccounts, 
             <option>All</option>
             {contentTypes.map((item) => <option key={item}>{item}</option>)}
           </select>
-          <select aria-label="Sort analytics" className="input sm:ml-auto sm:w-52" value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)}>
+          <select aria-label="Sort analytics" className="input sm:w-52 lg:ml-auto" value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)}>
             {(Object.keys(sortLabels) as SortMode[]).map((value) => <option key={value} value={value}>{sortLabels[value]}</option>)}
           </select>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[1180px] text-left text-sm">
             <thead className="bg-slate-50/70 text-[11px] uppercase tracking-[0.1em] text-slate-400">
               <tr>{["Post", "Account", "Posted", "Likes", "Comments", "Shares", "Saves", "Reach", "Impressions", "Rate", "Insight", ""].map((item, index) => <th key={`${item}-${index}`} className="px-5 py-3.5 font-semibold">{item}</th>)}</tr>
@@ -188,6 +195,39 @@ export default function Analytics({ posts, setPosts, campaigns, socialAccounts, 
               }) : <tr><td colSpan={12} className="px-5 py-12 text-center text-sm text-slate-400">No tracked posts match these filters.</td></tr>}
             </tbody>
           </table>
+        </div>
+
+        <div className="divide-y divide-slate-100 md:hidden">
+          {filtered.length ? filtered.map((post) => {
+            const account = socialAccounts.find((item) => item.id === post.socialAccountId);
+            return (
+              <button
+                key={post.id}
+                className="block w-full p-4 text-left transition-colors active:bg-violet-50"
+                onClick={() => setSelectedPost(post)}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-900">{post.title}</p>
+                    <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
+                      <SocialPlatformIcon platform={post.platform} size="sm" />
+                      {account?.accountName ?? platformLabel(post.platform)}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-violet-50 px-2 py-1 text-xs font-semibold text-violet-700">{engagementRate(post).toFixed(1)}%</span>
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+                  <span className="rounded-lg bg-slate-50 px-2.5 py-2 text-slate-500"><strong className="block text-sm text-slate-900">{formatNumber(post.impressions || post.reach)}</strong>Views</span>
+                  <span className="rounded-lg bg-slate-50 px-2.5 py-2 text-slate-500"><strong className="block text-sm text-slate-900">{formatNumber(post.likes)}</strong>Likes</span>
+                  <span className="rounded-lg bg-slate-50 px-2.5 py-2 text-slate-500"><strong className="block text-sm text-slate-900">{formatNumber(post.comments)}</strong>Comments</span>
+                </div>
+                <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
+                  <span>{post.datePosted}</span>
+                  <span className="inline-flex items-center gap-1">View details <ExternalLink size={12} /></span>
+                </div>
+              </button>
+            );
+          }) : <p className="px-4 py-12 text-center text-sm text-slate-400">No tracked posts match these filters.</p>}
         </div>
       </div>
 

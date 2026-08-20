@@ -5,6 +5,7 @@ import { useData } from "../context/DataContext";
 import { metaConnector } from "../integrations/social/metaConnector";
 import { youtubeConnector } from "../integrations/social/youtubeConnector";
 import { xConnector } from "../integrations/social/xConnector";
+import { tiktokConnector } from "../integrations/social/tiktokConnector";
 import { disconnectSocialAccount } from "../services/socialAccountService";
 import type { ImportMode, SocialPlatform } from "../types";
 import PageHeader from "../components/PageHeader";
@@ -38,9 +39,9 @@ const providers: Provider[] = [
   {
     name: "TikTok",
     displayName: "TikTok",
-    status: "blocked",
-    note: "Paused until TikTok approves the developer app and releases the Client Key.",
-    features: ["OAuth code ready", "Awaiting app approval", "No live connect button"],
+    status: "live",
+    note: "Sandbox connection is ready for your TikTok test account. Production access still requires TikTok app approval.",
+    features: ["Profile sync", "Public video list", "Sandbox testing"],
   },
   {
     name: "LinkedIn",
@@ -167,6 +168,7 @@ export default function ConnectSocial() {
   const connectorFor = (providerName: SocialPlatform) =>
     providerName === "YouTube Shorts" ? youtubeConnector
     : providerName === "Instagram" ? metaConnector
+    : providerName === "TikTok" ? tiktokConnector
     : providerName === "X" ? xConnector
     : null;
 
@@ -247,7 +249,7 @@ export default function ConnectSocial() {
       <PageHeader
         eyebrow="Channel connections"
         title="Connect social accounts"
-        description="Instagram, YouTube, and X are ready for live OAuth. TikTok is paused until the developer app approval releases the Client Key."
+        description="Connect your channels, import existing posts, and keep each account's analytics in one workspace. TikTok is available for sandbox testing."
       />
 
       <section className="grid gap-3 md:grid-cols-3">
@@ -256,16 +258,16 @@ export default function ConnectSocial() {
             <ShieldCheck size={16} />
             Live connectors
           </div>
-          <p className="mt-2 text-2xl font-semibold text-slate-950">3</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">Instagram, YouTube, and X can connect now.</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-950">4</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Instagram, YouTube, X, and TikTok sandbox can connect now.</p>
         </div>
         <div className="rounded-lg border border-amber-200 bg-white p-4 shadow-sm">
           <div className="flex items-center gap-2 text-sm font-semibold text-amber-800">
             <Clock3 size={16} />
             Blocked
           </div>
-          <p className="mt-2 text-2xl font-semibold text-slate-950">TikTok</p>
-          <p className="mt-1 text-xs leading-5 text-slate-500">Waiting on app approval and Client Key.</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-950">TikTok sandbox</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">Use a TikTok sandbox test account. Production access remains pending app approval.</p>
         </div>
         <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">

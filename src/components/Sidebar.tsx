@@ -30,6 +30,13 @@ const links: [Page, LucideIcon][] = [
 ];
 
 export default function Sidebar({ page, brandName, scheduledCount, onNavigate, onConnect, onLogout, open, onClose }: Props) {
+  const mobileLinks: [Page, LucideIcon][] = [
+    ["Dashboard", LayoutDashboard],
+    ["Connect", Plug],
+    ["Calendar", CalendarDays],
+    ["Analytics", BarChart3],
+  ];
+
   return (
     <>
       {open && (
@@ -53,7 +60,7 @@ export default function Sidebar({ page, brandName, scheduledCount, onNavigate, o
               className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-[12px]"
               style={{ boxShadow: "0 10px 22px rgba(48,47,87,0.18)" }}
             >
-              <img src="/vees-icon.svg" alt="" className="h-full w-full" />
+              <img src="/vees-icon.png" alt="" className="h-full w-full" />
             </div>
             <div>
               <p className="text-[15px] font-semibold tracking-tight" style={{ color: "var(--vees-text)", letterSpacing: 0 }}>
@@ -131,6 +138,31 @@ export default function Sidebar({ page, brandName, scheduledCount, onNavigate, o
           </button>
         </div>
       </aside>
+
+      <nav
+        aria-label="Primary navigation"
+        className="fixed inset-x-3 bottom-3 z-30 grid grid-cols-4 rounded-2xl border border-white/70 bg-white/90 p-1.5 shadow-[0_14px_40px_rgba(25,24,45,0.16)] backdrop-blur-xl lg:hidden"
+        style={{ paddingBottom: "calc(0.375rem + env(safe-area-inset-bottom))" }}
+      >
+        {mobileLinks.map(([label, Icon]) => {
+          const active = page === label;
+          return (
+            <button
+              key={label}
+              aria-current={active ? "page" : undefined}
+              onClick={() => onNavigate(label)}
+              className="flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 text-[10px] font-semibold transition-all duration-200"
+              style={{
+                background: active ? "rgba(159,131,255,0.16)" : "transparent",
+                color: active ? "var(--vees-violet-2)" : "var(--vees-muted)",
+              }}
+            >
+              <Icon size={18} strokeWidth={active ? 2.3 : 1.8} />
+              <span>{label}</span>
+            </button>
+          );
+        })}
+      </nav>
     </>
   );
 }

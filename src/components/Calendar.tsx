@@ -142,7 +142,7 @@ export default function Calendar({ scheduledPosts, setScheduledPosts, setIdeas, 
         </div>
       </section>
 
-      <section className="card overflow-hidden">
+      <section className="card hidden overflow-hidden sm:block">
         <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/80">
           {dayNames.map((day) => <div key={day} className="px-2 py-3 text-center text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">{day}</div>)}
         </div>
@@ -170,6 +170,44 @@ export default function Calendar({ scheduledPosts, setScheduledPosts, setIdeas, 
                     </div>
                   </>
                 )}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="card overflow-hidden sm:hidden">
+        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/80 px-4 py-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-950">Month agenda</p>
+            <p className="mt-0.5 text-xs text-slate-500">Tap a day to plan content.</p>
+          </div>
+          <CalendarPlus size={17} className="text-violet-500" />
+        </div>
+        <div className="divide-y divide-slate-100">
+          {days.filter((cell) => cell.dateKey).map((cell) => {
+            const dayPosts = cell.dateKey ? postsByDate[cell.dateKey] ?? [] : [];
+            const isToday = cell.dateKey === toDateKey(new Date());
+            return (
+              <button
+                key={`agenda-${cell.key}`}
+                onClick={() => cell.dateKey && openForDay(cell.dateKey)}
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors active:bg-violet-50"
+              >
+                <span className={`flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl text-xs font-semibold ${isToday ? "bg-violet-600 text-white" : "bg-slate-100 text-slate-600"}`}>
+                  <span className="text-[10px] uppercase opacity-70">{cell.date?.toLocaleDateString(undefined, { weekday: "short" })}</span>
+                  <span className="text-sm">{cell.date?.getDate()}</span>
+                </span>
+                <span className="min-w-0 flex-1">
+                  {dayPosts.length ? dayPosts.slice(0, 2).map((post) => (
+                    <span key={post.id} className="mb-1 flex items-center gap-1.5 truncate text-sm font-semibold text-slate-800 last:mb-0">
+                      <SocialPlatformIcon platform={post.platform} size="sm" />
+                      <span className="truncate">{post.title}</span>
+                    </span>
+                  )) : <span className="text-sm text-slate-400">No content planned</span>}
+                  {dayPosts.length > 2 && <span className="text-xs font-medium text-slate-400">+{dayPosts.length - 2} more</span>}
+                </span>
+                <ChevronRight size={16} className="shrink-0 text-slate-300" />
               </button>
             );
           })}
