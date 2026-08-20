@@ -1,4 +1,4 @@
-import { corsHeaders, json, redirectUri, serviceClient, sha256, tiktokScopes, userClient, requireEnv } from "../_shared/tiktok.ts";
+import { assertWorkspaceMember, authenticatedUser, corsHeaders, json, redirectUri, serviceClient, sha256, tiktokScopes, requireEnv } from "../_shared/tiktok.ts";
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -11,16 +11,12 @@ Deno.serve(async (request) => {
     const { workspaceId, importMode = "from_today" } = await request.json();
     if (!workspaceId) return json({ error: "workspaceId is required" }, 400);
 
-    const userDb = userClient(authorization);
-    const { data: { user }, error: userError } = await userDb.auth.getUser();
-    if (userError || !user) return json({ error: "Invalid user session" }, 401);
-
-    const { data: workspace, error: workspaceError } = await userDb.from("workspaces").select("id").eq("id", workspaceId).single();
-    if (workspaceError || !workspace) return json({ error: "Workspace not found" }, 404);
+    const db = serviceClient();
+    const { user } = await authenticatedUser(authorization);
+    if (!(await assertWorkspaceMember(db, workspaceId, user.id))) return json({ error: "Workspace not found" }, 404);
 
     const state = crypto.randomUUID();
     const stateHash = await sha256(state);
-    const db = serviceClient();
     await db.from("oauth_states").delete().eq("provider", "tiktok").eq("workspace_id", workspaceId).eq("user_id", user.id);
     const { error: stateError } = await db.from("oauth_states").insert({
       workspace_id: workspaceId,

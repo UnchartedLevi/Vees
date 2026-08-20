@@ -1,6 +1,6 @@
-import { appBaseUrl, corsHeaders, decryptTokenWithKey, encryptTokenWithKey, json, planTier, redirect, requireEnv, serviceClient, sha256, userClient } from "./core.ts";
+import { appBaseUrl, assertWorkspaceMember, authenticatedUser, corsHeaders, decryptTokenWithKey, encryptTokenWithKey, json, planTier, redirect, requireEnv, serviceClient, sha256, userClient } from "./core.ts";
 
-export { appBaseUrl, corsHeaders, json, planTier, redirect, requireEnv, serviceClient, sha256, userClient };
+export { appBaseUrl, assertWorkspaceMember, authenticatedUser, corsHeaders, json, planTier, redirect, requireEnv, serviceClient, sha256, userClient };
 
 export const tiktokScopes = ["user.info.basic", "video.list"];
 
